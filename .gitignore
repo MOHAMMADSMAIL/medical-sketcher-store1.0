@@ -1,0 +1,14 @@
+node_modules/
+.next/
+dist/
+coverage/
+.env
+.env.*
+!.env.example
+*.log
+*.zip
+_conversation_source/
+.prisma/
+.DS_Store
+storage/private/
+*.tsbuildinfo

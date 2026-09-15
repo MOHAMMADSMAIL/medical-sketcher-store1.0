@@ -1,0 +1,3 @@
+'use client';
+import { useEffect, useState } from 'react';
+export default function OwnerPage(){const [data,setData]=useState<any>();const [error,setError]=useState('');useEffect(()=>{fetch(`${process.env.NEXT_PUBLIC_API_URL||'http://localhost:3000'}/api/owner/dashboard`,{credentials:'include'}).then(async r=>r.ok?setData(await r.json()):setError('Owner access required')).catch(()=>setError('Dashboard unavailable'));},[]);return <main style={{padding:'4rem'}}><h1>Owner dashboard</h1>{error&&<p>{error}</p>}{data&&<div><p>Users: {data.users}</p><p>Products: {data.products}</p><p>Orders: {data.orders}</p><p>Payments: {data.payments}</p><p>Events: {data.events}</p></div>}</main>}

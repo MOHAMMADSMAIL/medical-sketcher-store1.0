@@ -1,0 +1,3 @@
+'use client';
+import { useEffect, useState } from 'react';
+export default function CartPage(){ const [cart,setCart]=useState<any>(null); const [error,setError]=useState(''); useEffect(()=>{ fetch(`${process.env.NEXT_PUBLIC_API_URL||'http://localhost:3000'}/api/cart`,{credentials:'include'}).then(async r=>r.ok?setCart(await r.json()):setError('Please sign in')).catch(()=>setError('Cart unavailable')); },[]); if(error)return <main><h1>{error}</h1></main>; if(!cart)return <main><h1>Loading cart…</h1></main>; return <main style={{padding:'4rem'}}><h1>Your cart</h1>{cart.items.map((i:any)=><p key={i.id}>{i.product.title} × {i.quantity} — ${i.lineTotal.toFixed(2)}</p>)}<strong>Total ${cart.subtotal.toFixed(2)} {cart.currency}</strong></main>; }

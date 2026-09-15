@@ -1,0 +1,3 @@
+import type { NextFunction, Request, Response } from 'express';
+const buckets = new Map<string, { started: number; count: number }>();
+export function rateLimit(req: Request, res: Response, next: NextFunction) { const sensitive = /\/auth\/(login|register)|\/payments|\/downloads|\/owner/.test(req.path); if (!sensitive) return next(); const ttl = Number(process.env.RATE_LIMIT_TTL || 60000); const max = Number(process.env.RATE_LIMIT_MAX || 100); const key = `${req.ip}:${req.path}`; const now = Date.now(); const bucket = buckets.get(key); if (!bucket || now - bucket.started >= ttl) { buckets.set(key, { started: now, count: 1 }); return next(); } bucket.count += 1; if (bucket.count > max) return res.status(429).json({ message: 'Too many requests' }); return next(); }

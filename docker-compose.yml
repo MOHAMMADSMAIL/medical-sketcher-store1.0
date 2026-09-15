@@ -1,0 +1,36 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: aurelia
+      POSTGRES_PASSWORD: change-me
+      POSTGRES_DB: aurelia_books
+    ports: ["5432:5432"]
+    volumes: ["aurelia-db:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aurelia -d aurelia_books"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://aurelia:change-me@postgres:5432/aurelia_books?schema=public
+      API_PORT: 3000
+      WEB_URL: http://localhost:3001
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports: ["3000:3000"]
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    environment:
+      API_URL: http://api:3000
+    depends_on: [api]
+    ports: ["3001:3001"]
+volumes:
+  aurelia-db:

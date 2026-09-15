@@ -1,0 +1,3 @@
+'use client';
+import {useEffect,useState} from 'react';
+export default function Wishlist(){const [items,setItems]=useState<any[]>([]);const [error,setError]=useState('');useEffect(()=>{fetch(`${process.env.NEXT_PUBLIC_API_URL||'http://localhost:3000'}/api/wishlist`,{credentials:'include'}).then(async r=>r.ok?setItems(await r.json()):setError('Please sign in')).catch(()=>setError('Wishlist unavailable'));},[]);return <main style={{padding:'3rem'}}><h1>Wishlist</h1>{error&&<p>{error}</p>}{!error&&!items.length&&<p>Your wishlist is empty.</p>}{items.map(i=><p key={i.id}>{i.product.title}</p>)}</main>}

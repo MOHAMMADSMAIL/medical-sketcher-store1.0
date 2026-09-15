@@ -1,0 +1,3 @@
+'use client';
+import { useEffect, useState } from 'react';
+export default function LibraryPage(){const [items,setItems]=useState<any[]>([]);const [error,setError]=useState('');useEffect(()=>{fetch(`${process.env.NEXT_PUBLIC_API_URL||'http://localhost:3000'}/api/library`,{credentials:'include'}).then(async r=>r.ok?setItems(await r.json()):setError('Please sign in')).catch(()=>setError('Library unavailable'));},[]);return <main style={{padding:'4rem'}}><h1>My Library</h1>{error&&<p>{error}</p>}{!error&&!items.length&&<p>Your purchased books will appear here.</p>}{items.map(item=><article key={item.id}><h2>{item.product.title}</h2><a href={`${process.env.NEXT_PUBLIC_API_URL||'http://localhost:3000'}/api/downloads/${item.productId}`}>Download</a></article>)}</main>}

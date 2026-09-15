@@ -1,0 +1,3 @@
+'use client';
+import {useEffect,useState} from 'react';
+export default function Orders(){const [orders,setOrders]=useState<any[]>([]);const [error,setError]=useState('');useEffect(()=>{fetch(`${process.env.NEXT_PUBLIC_API_URL||'http://localhost:3000'}/api/orders`,{credentials:'include'}).then(async r=>r.ok?setOrders(await r.json()):setError('Please sign in')).catch(()=>setError('Orders unavailable'));},[]);return <main style={{padding:'3rem'}}><h1>Orders</h1>{error&&<p>{error}</p>}{orders.map(o=><article key={o.id}><h2>{o.status}</h2><p>Total ${Number(o.total).toFixed(2)} · {o.payments?.[0]?.status||'No payment'}</p>{o.items.map((i:any)=><p key={i.id}>{i.product.title} × {i.quantity}</p>)}</article>)}</main>}
