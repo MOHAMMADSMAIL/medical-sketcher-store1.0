@@ -1,0 +1,89 @@
+.container {
+  width: 100%;
+}
+
+.container h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #536044;
+  margin: 0 0 30px 0;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid rgba(83, 96, 68, 0.2);
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+.table {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(83, 96, 68, 0.1);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.table th {
+  background: rgba(83, 96, 68, 0.05);
+  padding: 16px;
+  text-align: left;
+  font-weight: 600;
+  color: #536044;
+  border-bottom: 1px solid rgba(83, 96, 68, 0.1);
+}
+
+.table td {
+  padding: 16px;
+  border-bottom: 1px solid rgba(83, 96, 68, 0.05);
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.badge.customer {
+  background: rgba(33, 150, 243, 0.2);
+  color: #1976d2;
+}
+
+.badge.admin {
+  background: rgba(156, 39, 176, 0.2);
+  color: #7b1fa2;
+}
+
+.badge.owner {
+  background: rgba(76, 175, 80, 0.2);
+  color: #388e3c;
+}
+
+.viewBtn {
+  padding: 6px 12px;
+  background: rgba(33, 150, 243, 0.1);
+  color: #1976d2;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.loading,
+.empty {
+  text-align: center;
+  padding: 40px;
+  color: #999;
+}
