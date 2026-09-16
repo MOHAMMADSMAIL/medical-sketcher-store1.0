@@ -233,6 +233,51 @@ export class OwnerController {
     return this.ownerService.rejectReview(id);
   }
 
+  @Get('library')
+  async getLibrary(@Query('page') page?: string, @Query('limit') limit?: string) {
+    return this.ownerService.getLibraryAccess(parseInt(page || '1'), parseInt(limit || '10'));
+  }
+
+  @Get('media')
+  async getMedia(@Query('page') page?: string, @Query('limit') limit?: string, @Query('type') type?: string) {
+    return this.ownerService.getMedia(parseInt(page || '1'), parseInt(limit || '10'), type);
+  }
+
+  @Delete('media/:id')
+  async deleteMedia(@Param('id') id: string) {
+    return this.ownerService.deleteMedia(id);
+  }
+
+  @Get('cms')
+  async getCMS(@Query('type') type: string, @Query('language') language: string) {
+    return this.ownerService.getCMSContent(type, language);
+  }
+
+  @Put('cms/:id')
+  async updateCMS(@Param('id') id: string, @Body('content') content: any) {
+    return this.ownerService.updateCMSContent(id, content);
+  }
+
+  @Post('cms/:id/publish')
+  async publishCMS(@Param('id') id: string) {
+    return this.ownerService.publishCMS(id);
+  }
+
+  @Get('analytics')
+  async getAnalytics() {
+    return this.ownerService.getAnalytics();
+  }
+
+  @Get('settings')
+  async getSettings() {
+    return this.ownerService.getSettings();
+  }
+
+  @Put('settings')
+  async updateSettings(@Body() data: Record<string, unknown>) {
+    return this.ownerService.updateSettings(data);
+  }
+
   // Audit Logs
   @Get('audit-logs')
   async getAuditLogs(

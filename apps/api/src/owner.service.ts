@@ -360,6 +360,59 @@ export class OwnerService {
     return this.prisma.review.delete({ where: { id } });
   }
 
+  async getLibraryAccess(page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+    const [items, total] = await Promise.all([
+      this.prisma.downloadPermission.findMany({ skip, take: limit, include: { user: true, product: true, order: true } }),
+      this.prisma.downloadPermission.count(),
+    ]);
+    return { items, pagination: { page, limit, total, pages: Math.ceil(total / limit) } };
+  }
+
+  async getMedia(page = 1, limit = 10, type?: string) {
+    const skip = (page - 1) * limit;
+    const where = type ? { mimeType: { startsWith: type } } : {};
+    const [items, total] = await Promise.all([
+      this.prisma.media.findMany({ where, skip, take: limit, include: { product: true } }),
+      this.prisma.media.count({ where }),
+    ]);
+    return { items, pagination: { page, limit, total, pages: Math.ceil(total / limit) } };
+  }
+
+  async deleteMedia(id: string) {
+    return this.prisma.media.delete({ where: { id } });
+  }
+
+  async getCMSContent(type: string, language: string) {
+    return this.prisma.page.findFirst({ where: { slug: `${type}-${language}` }, include: { sections: true, versions: true } });
+  }
+
+  async updateCMSContent(id: string, content: any) {
+    return this.prisma.page.update({ where: { id }, data: { sections: { deleteMany: {}, create: Object.entries(content || {}).map(([sectionType, value]) => ({ type: sectionType, content: value as any })) } }, include: { sections: true } });
+  }
+
+  async publishCMS(id: string) {
+    return this.prisma.page.update({ where: { id }, data: { status: 'PUBLISHED' } });
+  }
+
+  async getSettings() {
+    const rows = await this.prisma.siteSettings.findMany();
+    return Object.fromEntries(rows.map(row => [row.key, row.value]));
+  }
+
+  async updateSettings(data: Record<string, unknown>) {
+    await this.prisma.$transaction(Object.entries(data).map(([key, value]) => this.prisma.siteSettings.upsert({ where: { key }, update: { value: value as any }, create: { key, value: value as any } })));
+    return this.getSettings();
+  }
+
+  async getAnalytics() {
+    const [events, revenue] = await Promise.all([
+      this.prisma.analyticsEvent.groupBy({ by: ['name'], _count: { _all: true } }),
+      this.prisma.order.aggregate({ where: { status: 'PAID' }, _sum: { total: true } }),
+    ]);
+    return { events, revenue: revenue._sum.total || 0 };
+  }
+
   // Audit Logs
   async getAuditLogs(page = 1, limit = 10, filters?: any) {
     const skip = (page - 1) * limit;
