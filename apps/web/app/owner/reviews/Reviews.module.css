@@ -1,0 +1,126 @@
+.container {
+  width: 100%;
+}
+
+.container h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #536044;
+  margin: 0 0 30px 0;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid rgba(83, 96, 68, 0.1);
+}
+
+.tab {
+  padding: 12px 20px;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: #999;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tab.active {
+  color: #536044;
+  border-bottom-color: #536044;
+}
+
+.reviewsList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.reviewCard {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(83, 96, 68, 0.1);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.reviewHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.product {
+  font-weight: 600;
+  color: #536044;
+  margin: 0;
+}
+
+.user {
+  font-size: 12px;
+  color: #999;
+  margin: 4px 0 0 0;
+}
+
+.rating {
+  font-size: 16px;
+}
+
+.body {
+  color: #666;
+  line-height: 1.5;
+  margin: 0 0 16px 0;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.approveBtn,
+.rejectBtn {
+  padding: 6px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.approveBtn {
+  background: rgba(76, 175, 80, 0.2);
+  color: #388e3c;
+}
+
+.approveBtn:hover {
+  background: rgba(76, 175, 80, 0.3);
+}
+
+.rejectBtn {
+  background: rgba(220, 53, 69, 0.2);
+  color: #dc3545;
+}
+
+.rejectBtn:hover {
+  background: rgba(220, 53, 69, 0.3);
+}
+
+.approvedBadge {
+  padding: 6px 16px;
+  background: rgba(76, 175, 80, 0.2);
+  color: #388e3c;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.loading,
+.empty {
+  text-align: center;
+  padding: 40px;
+  color: #999;
+}

@@ -1,0 +1,169 @@
+.container {
+  width: 100%;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #536044;
+  margin: 0;
+}
+
+.addButton {
+  background: linear-gradient(135deg, #536044 0%, #3d4730 100%);
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.addButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(83, 96, 68, 0.3);
+}
+
+.form {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(83, 96, 68, 0.1);
+  border-radius: 12px;
+  padding: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.form input,
+.form textarea {
+  padding: 10px 14px;
+  border: 1px solid rgba(83, 96, 68, 0.2);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.form textarea {
+  grid-column: 1 / -1;
+  min-height: 80px;
+}
+
+.submitBtn {
+  grid-column: 1 / -1;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #536044 0%, #3d4730 100%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.submitBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(83, 96, 68, 0.3);
+}
+
+.searchInput {
+  padding: 10px 14px;
+  border: 1px solid rgba(83, 96, 68, 0.2);
+  border-radius: 8px;
+  font-size: 14px;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.card {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(83, 96, 68, 0.1);
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.card h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #536044;
+  margin: 0 0 8px 0;
+}
+
+.card .meta {
+  font-size: 12px;
+  color: #b18a48;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+}
+
+.card .bio {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.4;
+  margin: 0 0 16px 0;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.editBtn,
+.deleteBtn {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.editBtn {
+  background: rgba(33, 150, 243, 0.1);
+  color: #1976d2;
+}
+
+.editBtn:hover {
+  background: rgba(33, 150, 243, 0.2);
+}
+
+.deleteBtn {
+  background: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+}
+
+.deleteBtn:hover {
+  background: rgba(220, 53, 69, 0.2);
+}
+
+.loading,
+.empty {
+  text-align: center;
+  padding: 40px;
+  color: #999;
+  font-size: 14px;
+}

@@ -1,0 +1,84 @@
+.container {
+  width: 100%;
+}
+
+.container h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #536044;
+  margin: 0 0 30px 0;
+}
+
+.filterInput {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid rgba(83, 96, 68, 0.2);
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+.table {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(83, 96, 68, 0.1);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.table th {
+  background: rgba(83, 96, 68, 0.05);
+  padding: 16px;
+  text-align: left;
+  font-weight: 600;
+  color: #536044;
+  border-bottom: 1px solid rgba(83, 96, 68, 0.1);
+}
+
+.table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(83, 96, 68, 0.05);
+  color: #333;
+}
+
+.action {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.action.create {
+  background: rgba(76, 175, 80, 0.2);
+  color: #388e3c;
+}
+
+.action.update {
+  background: rgba(33, 150, 243, 0.2);
+  color: #1976d2;
+}
+
+.action.delete {
+  background: rgba(220, 53, 69, 0.2);
+  color: #dc3545;
+}
+
+.details {
+  color: #999;
+}
+
+.loading,
+.empty {
+  text-align: center;
+  padding: 40px;
+  color: #999;
+}
