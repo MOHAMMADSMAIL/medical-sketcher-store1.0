@@ -208,6 +208,16 @@ export class OwnerController {
     return this.ownerService.updateUserRole(id, data.role);
   }
 
+  @Post('users/:userId/library/:bookId')
+  async grantLibraryAccess(@Param('userId') userId: string, @Param('bookId') bookId: string) {
+    return this.ownerService.grantLibraryAccess(userId, bookId);
+  }
+
+  @Delete('users/:userId/library/:bookId')
+  async revokeLibraryAccess(@Param('userId') userId: string, @Param('bookId') bookId: string) {
+    return this.ownerService.revokeLibraryAccess(userId, bookId);
+  }
+
   // Reviews
   @Get('reviews')
   async getReviews(
@@ -229,8 +239,13 @@ export class OwnerController {
   }
 
   @Post('reviews/:id/reject')
-  async rejectReview(@Param('id') id: string) {
-    return this.ownerService.rejectReview(id);
+  async rejectReview(@Param('id') id: string, @Body('reason') reason?: string) {
+    return this.ownerService.rejectReview(id, reason);
+  }
+
+  @Post('reviews/:id/archive')
+  async archiveReview(@Param('id') id: string) {
+    return this.ownerService.archiveReview(id);
   }
 
   @Get('library')
@@ -238,14 +253,88 @@ export class OwnerController {
     return this.ownerService.getLibraryAccess(parseInt(page || '1'), parseInt(limit || '10'));
   }
 
+  @Post('library/:id/extend')
+  async extendLibrary(@Param('id') id: string, @Body('expiryDate') expiryDate: string) {
+    return this.ownerService.extendLibraryAccess(id, new Date(expiryDate));
+  }
+
   @Get('media')
   async getMedia(@Query('page') page?: string, @Query('limit') limit?: string, @Query('type') type?: string) {
     return this.ownerService.getMedia(parseInt(page || '1'), parseInt(limit || '10'), type);
   }
 
+  @Post('media/upload')
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 50 * 1024 * 1024 } }))
+  async uploadMedia(@UploadedFile() file: Express.Multer.File, @Body('type') type?: string) {
+    if (!file) throw new BadRequestException('No file provided');
+    return this.ownerService.uploadMedia(file, type);
+  }
+
   @Delete('media/:id')
   async deleteMedia(@Param('id') id: string) {
     return this.ownerService.deleteMedia(id);
+  }
+
+  // Lessons
+  @Get('lessons')
+  async getLessons(@Query('page') page?: string, @Query('limit') limit?: string) {
+    return this.ownerService.getLessons(parseInt(page || '1'), parseInt(limit || '10'));
+  }
+
+  @Get('lessons/:id')
+  async getLesson(@Param('id') id: string) {
+    return this.ownerService.getLesson(id);
+  }
+
+  @Post('lessons')
+  async createLesson(@Body() data: any) {
+    return this.ownerService.createLesson(data);
+  }
+
+  @Put('lessons/:id')
+  async updateLesson(@Param('id') id: string, @Body() data: any) {
+    return this.ownerService.updateLesson(id, data);
+  }
+
+  @Post('lessons/:id/publish')
+  async publishLesson(@Param('id') id: string) {
+    return this.ownerService.publishLesson(id);
+  }
+
+  @Delete('lessons/:id')
+  async deleteLesson(@Param('id') id: string) {
+    return this.ownerService.deleteLesson(id);
+  }
+
+  // Assessments
+  @Get('assessments')
+  async getAssessments(@Query('page') page?: string, @Query('limit') limit?: string) {
+    return this.ownerService.getAssessments(parseInt(page || '1'), parseInt(limit || '10'));
+  }
+
+  @Get('assessments/:id')
+  async getAssessment(@Param('id') id: string) {
+    return this.ownerService.getAssessment(id);
+  }
+
+  @Post('assessments')
+  async createAssessment(@Body() data: any) {
+    return this.ownerService.createAssessment(data);
+  }
+
+  @Put('assessments/:id')
+  async updateAssessment(@Param('id') id: string, @Body() data: any) {
+    return this.ownerService.updateAssessment(id, data);
+  }
+
+  @Post('assessments/:id/publish')
+  async publishAssessment(@Param('id') id: string) {
+    return this.ownerService.publishAssessment(id);
+  }
+
+  @Delete('assessments/:id')
+  async deleteAssessment(@Param('id') id: string) {
+    return this.ownerService.deleteAssessment(id);
   }
 
   @Get('cms')

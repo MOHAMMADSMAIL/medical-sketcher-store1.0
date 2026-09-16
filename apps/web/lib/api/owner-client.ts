@@ -185,9 +185,9 @@ class OwnerAPIClient {
   }
 
   // Reviews
-  async getReviews(status?: string, page = 1, limit = 10) {
+  async getReviews(approved?: boolean, page = 1, limit = 10) {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
-    if (status) params.append('status', status);
+    if (approved !== undefined) params.append('approved', String(approved));
     return this.fetchWithAuth(`/owner/reviews?${params.toString()}`);
   }
 
@@ -195,7 +195,7 @@ class OwnerAPIClient {
     return this.fetchWithAuth(`/owner/reviews/${id}/approve`, { method: 'POST' });
   }
 
-  async rejectReview(id: string, reason: string) {
+  async rejectReview(id: string, reason?: string) {
     return this.fetchWithAuth(`/owner/reviews/${id}/reject`, {
       method: 'POST',
       body: JSON.stringify({ reason }),
@@ -252,6 +252,10 @@ class OwnerAPIClient {
 
   async publishAssessment(id: string) {
     return this.fetchWithAuth(`/owner/assessments/${id}/publish`, { method: 'POST' });
+  }
+
+  async deleteAssessment(id: string) {
+    return this.fetchWithAuth(`/owner/assessments/${id}`, { method: 'DELETE' });
   }
 
   // CMS

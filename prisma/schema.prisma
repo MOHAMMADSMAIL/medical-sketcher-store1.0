@@ -155,11 +155,11 @@ model DownloadPermission {
   id        String        @id @default(cuid())
   userId    String
   productId String
-  orderId   String
+  orderId   String?
   expiresAt DateTime?
   user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   product   Product       @relation(fields: [productId], references: [id])
-  order     Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order     Order?        @relation(fields: [orderId], references: [id], onDelete: Cascade)
   logs      DownloadLog[]
 
   @@unique([userId, productId])
@@ -186,26 +186,53 @@ model WishlistItem {
 }
 
 model Review {
-  id        String   @id @default(cuid())
-  userId    String
-  productId String
-  rating    Int
-  body      String
-  approved  Boolean  @default(false)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+  id               String   @id @default(cuid())
+  userId           String
+  productId        String
+  rating           Int
+  body             String
+  approved         Boolean  @default(false)
+  archived         Boolean  @default(false)
+  rejectionReason  String?
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product          Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt        DateTime @default(now())
 
   @@unique([userId, productId])
 }
 
 model Media {
-  id         String  @id @default(cuid())
-  productId  String
-  storageKey String
-  mimeType   String
-  size       Int
-  product    Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  id           String   @id @default(cuid())
+  productId    String?
+  storageKey   String
+  mimeType     String
+  size         Int
+  type         String?
+  originalName String?
+  product      Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+}
+
+model Lesson {
+  id        String   @id @default(cuid())
+  title     String
+  slug      String   @unique
+  content   Json?
+  order     Int      @default(0)
+  status    String   @default("DRAFT")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Assessment {
+  id         String   @id @default(cuid())
+  title      String
+  slug       String   @unique
+  questions  Json?
+  passScore  Int      @default(70)
+  status     String   @default("DRAFT")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model Page {

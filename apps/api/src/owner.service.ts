@@ -352,12 +352,22 @@ export class OwnerService {
   async approveReview(id: string) {
     return this.prisma.review.update({
       where: { id },
-      data: { approved: true },
+      data: { approved: true, rejectionReason: null },
     });
   }
 
-  async rejectReview(id: string) {
-    return this.prisma.review.delete({ where: { id } });
+  async rejectReview(id: string, reason?: string) {
+    return this.prisma.review.update({
+      where: { id },
+      data: { approved: false, rejectionReason: reason || null },
+    });
+  }
+
+  async archiveReview(id: string) {
+    return this.prisma.review.update({
+      where: { id },
+      data: { archived: true },
+    });
   }
 
   async getLibraryAccess(page = 1, limit = 10) {
@@ -369,18 +379,161 @@ export class OwnerService {
     return { items, pagination: { page, limit, total, pages: Math.ceil(total / limit) } };
   }
 
+  async extendLibraryAccess(id: string, expiresAt: Date) {
+    return this.prisma.downloadPermission.update({
+      where: { id },
+      data: { expiresAt },
+    });
+  }
+
+  async grantLibraryAccess(userId: string, productId: string) {
+    return this.prisma.downloadPermission.upsert({
+      where: { userId_productId: { userId, productId } },
+      update: {},
+      create: { userId, productId },
+    });
+  }
+
+  async revokeLibraryAccess(userId: string, productId: string) {
+    return this.prisma.downloadPermission.delete({
+      where: { userId_productId: { userId, productId } },
+    });
+  }
+
   async getMedia(page = 1, limit = 10, type?: string) {
     const skip = (page - 1) * limit;
     const where = type ? { mimeType: { startsWith: type } } : {};
     const [items, total] = await Promise.all([
-      this.prisma.media.findMany({ where, skip, take: limit, include: { product: true } }),
+      this.prisma.media.findMany({ where, skip, take: limit, include: { product: true }, orderBy: { createdAt: 'desc' } }),
       this.prisma.media.count({ where }),
     ]);
     return { items, pagination: { page, limit, total, pages: Math.ceil(total / limit) } };
   }
 
+  async uploadMedia(file: Express.Multer.File, type?: string) {
+    const storageDir = path.join(process.cwd(), 'storage', 'media');
+    if (!fs.existsSync(storageDir)) {
+      fs.mkdirSync(storageDir, { recursive: true });
+    }
+
+    const fileName = `${Date.now()}-${file.originalname}`;
+    const filePath = path.join(storageDir, fileName);
+    fs.writeFileSync(filePath, file.buffer);
+
+    const media = await this.prisma.media.create({
+      data: {
+        storageKey: `media/${fileName}`,
+        mimeType: file.mimetype,
+        size: file.size,
+        type: type || file.mimetype.split('/')[0],
+        originalName: file.originalname,
+      },
+    });
+
+    return {
+      id: media.id,
+      fileName,
+      size: file.size,
+      url: `/api/media/${media.id}`,
+    };
+  }
+
   async deleteMedia(id: string) {
     return this.prisma.media.delete({ where: { id } });
+  }
+
+  // Lessons Management
+  async getLessons(page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+    const [items, total] = await Promise.all([
+      this.prisma.lesson.findMany({ skip, take: limit, orderBy: { order: 'asc' } }),
+      this.prisma.lesson.count(),
+    ]);
+    return { items, pagination: { page, limit, total, pages: Math.ceil(total / limit) } };
+  }
+
+  async getLesson(id: string) {
+    return this.prisma.lesson.findUnique({ where: { id } });
+  }
+
+  async createLesson(data: any) {
+    return this.prisma.lesson.create({
+      data: {
+        title: data.title,
+        slug: data.slug,
+        content: data.content,
+        order: data.order ?? 0,
+        status: data.status || 'DRAFT',
+      },
+    });
+  }
+
+  async updateLesson(id: string, data: any) {
+    return this.prisma.lesson.update({
+      where: { id },
+      data: {
+        title: data.title,
+        slug: data.slug,
+        content: data.content,
+        order: data.order,
+        status: data.status,
+      },
+    });
+  }
+
+  async publishLesson(id: string) {
+    return this.prisma.lesson.update({ where: { id }, data: { status: 'PUBLISHED' } });
+  }
+
+  async deleteLesson(id: string) {
+    return this.prisma.lesson.delete({ where: { id } });
+  }
+
+  // Assessments Management
+  async getAssessments(page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+    const [items, total] = await Promise.all([
+      this.prisma.assessment.findMany({ skip, take: limit }),
+      this.prisma.assessment.count(),
+    ]);
+    return { items, pagination: { page, limit, total, pages: Math.ceil(total / limit) } };
+  }
+
+  async getAssessment(id: string) {
+    return this.prisma.assessment.findUnique({ where: { id } });
+  }
+
+  async createAssessment(data: any) {
+    return this.prisma.assessment.create({
+      data: {
+        title: data.title,
+        slug: data.slug,
+        questions: data.questions,
+        passScore: data.passScore ?? 70,
+        status: data.status || 'DRAFT',
+      },
+    });
+  }
+
+  async updateAssessment(id: string, data: any) {
+    return this.prisma.assessment.update({
+      where: { id },
+      data: {
+        title: data.title,
+        slug: data.slug,
+        questions: data.questions,
+        passScore: data.passScore,
+        status: data.status,
+      },
+    });
+  }
+
+  async publishAssessment(id: string) {
+    return this.prisma.assessment.update({ where: { id }, data: { status: 'PUBLISHED' } });
+  }
+
+  async deleteAssessment(id: string) {
+    return this.prisma.assessment.delete({ where: { id } });
   }
 
   async getCMSContent(type: string, language: string) {
