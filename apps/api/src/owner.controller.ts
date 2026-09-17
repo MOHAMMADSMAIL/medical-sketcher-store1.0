@@ -1,5 +1,6 @@
 import {
   Body,
+  BadRequestException,
   Controller,
   Delete,
   Get,
@@ -10,16 +11,100 @@ import {
   Put,
   Query,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { PrismaService } from './prisma.service';
 import { AuthGuard } from './auth.guard';
 import { Roles, RolesGuard } from './roles.guard';
+import { OwnerService } from './owner.service';
 
 @Controller('owner')
 @UseGuards(AuthGuard, RolesGuard)
 @Roles('OWNER', 'ADMIN')
 export class OwnerController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService, private readonly owner: OwnerService) {}
+
+  @Get('dashboard/stats')
+  dashboardStats() { return this.owner.getDashboardStats(); }
+
+  @Get('books')
+  books(@Query('page') page = '1', @Query('limit') limit = '20', @Query() filters: Record<string, any>) { return this.owner.getBooks(Number(page), Number(limit), filters); }
+
+  @Get('books/:id')
+  book(@Param('id') id: string) { return this.owner.getBook(id); }
+
+  @Post('books')
+  createBook(@Body() body: Record<string, any>) { return this.owner.createBook(body); }
+
+  @Put('books/:id')
+  updateBook(@Param('id') id: string, @Body() body: Record<string, any>) { return this.owner.updateBook(id, body); }
+
+  @Post('books/:id/publish')
+  publishBook(@Param('id') id: string) { return this.owner.publishBook(id); }
+
+  @Post('books/:id/unpublish')
+  unpublishBook(@Param('id') id: string) { return this.owner.unpublishBook(id); }
+
+  @Post('books/:id/archive')
+  archiveBook(@Param('id') id: string) { return this.owner.unpublishBook(id); }
+
+  @Post('books/:id/upload')
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 100 * 1024 * 1024 }, fileFilter: (_req, file, cb) => cb(null, /^(application|audio|image|text)\//.test(file.mimetype)) }))
+  uploadBook(@Param('id') id: string, @UploadedFile() file: any, @Body('fileType') fileType = 'book') {
+    if (!file) throw new BadRequestException('A supported file is required');
+    return this.owner.uploadBookFile(id, file, fileType);
+  }
+
+  @Get('media')
+  media(@Query('page') page = '1', @Query('limit') limit = '20', @Query('type') type?: string) { return this.owner.getMedia(Number(page), Number(limit), type); }
+
+  @Post('media/upload')
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 100 * 1024 * 1024 }, fileFilter: (_req, file, cb) => cb(null, /^(application|audio|image|text)\//.test(file.mimetype)) }))
+  uploadMedia(@UploadedFile() file: any, @Body('type') type?: string) {
+    if (!file) throw new BadRequestException('A supported file is required');
+    return this.owner.uploadMedia(file, type);
+  }
+
+  @Delete('media/:id')
+  deleteMedia(@Param('id') id: string) { return this.owner.deleteMedia(id); }
+
+  @Get('authors')
+  authors(@Query('page') page = '1', @Query('limit') limit = '20', @Query('search') search?: string) { return this.owner.getAuthors(Number(page), Number(limit), search); }
+  @Post('authors')
+  createAuthor(@Body() body: Record<string, any>) { return this.owner.createAuthor(body); }
+  @Put('authors/:id')
+  updateAuthor(@Param('id') id: string, @Body() body: Record<string, any>) { return this.owner.updateAuthor(id, body); }
+  @Delete('authors/:id')
+  deleteAuthor(@Param('id') id: string) { return this.owner.deleteAuthor(id); }
+
+  @Get('categories')
+  categories(@Query('page') page = '1', @Query('limit') limit = '20', @Query('search') search?: string) { return this.owner.getCategories(Number(page), Number(limit), search); }
+  @Post('categories')
+  createCategory(@Body() body: Record<string, any>) { return this.owner.createCategory(body); }
+  @Put('categories/:id')
+  updateCategory(@Param('id') id: string, @Body() body: Record<string, any>) { return this.owner.updateCategory(id, body); }
+  @Delete('categories/:id')
+  deleteCategory(@Param('id') id: string) { return this.owner.deleteCategory(id); }
+
+  @Get('lessons')
+  lessons(@Query('page') page = '1', @Query('limit') limit = '20') { return this.owner.getLessons(Number(page), Number(limit)); }
+  @Post('lessons')
+  createLesson(@Body() body: Record<string, any>) { return this.owner.createLesson(body); }
+  @Put('lessons/:id')
+  updateLesson(@Param('id') id: string, @Body() body: Record<string, any>) { return this.owner.updateLesson(id, body); }
+  @Post('lessons/:id/publish')
+  publishLesson(@Param('id') id: string) { return this.owner.publishLesson(id); }
+
+  @Get('assessments')
+  assessments(@Query('page') page = '1', @Query('limit') limit = '20') { return this.owner.getAssessments(Number(page), Number(limit)); }
+  @Post('assessments')
+  createAssessment(@Body() body: Record<string, any>) { return this.owner.createAssessment(body); }
+  @Put('assessments/:id')
+  updateAssessment(@Param('id') id: string, @Body() body: Record<string, any>) { return this.owner.updateAssessment(id, body); }
+  @Post('assessments/:id/publish')
+  publishAssessment(@Param('id') id: string) { return this.owner.publishAssessment(id); }
 
   @Get('dashboard')
   async dashboard() {
