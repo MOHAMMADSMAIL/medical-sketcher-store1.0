@@ -1,384 +1,148 @@
 import {
+  Body,
   Controller,
+  Delete,
   Get,
+  NotFoundException,
+  Param,
+  Patch,
   Post,
   Put,
-  Delete,
-  UseGuards,
-  UseInterceptors,
-  UploadedFile,
-  Body,
-  Param,
   Query,
-  BadRequestException,
+  UseGuards,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { OwnerService } from './owner.service';
+import { PrismaService } from './prisma.service';
 import { AuthGuard } from './auth.guard';
 import { Roles, RolesGuard } from './roles.guard';
-import { CurrentUser } from './decorators/current-user.decorator';
 
 @Controller('owner')
 @UseGuards(AuthGuard, RolesGuard)
 @Roles('OWNER', 'ADMIN')
 export class OwnerController {
-  constructor(private readonly ownerService: OwnerService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
-  // Dashboard
-  @Get('dashboard/stats')
-  async getDashboardStats() {
-    return this.ownerService.getDashboardStats();
+  @Get('dashboard')
+  async dashboard() {
+    const [users, products, orders, payments, events, published, reviews, downloads, revenue, recentOrders] = await Promise.all([
+      this.prisma.user.count(),
+      this.prisma.product.count(),
+      this.prisma.order.count(),
+      this.prisma.payment.count(),
+      this.prisma.analyticsEvent.count(),
+      this.prisma.product.count({ where: { status: 'PUBLISHED' } }),
+      this.prisma.review.count({ where: { approved: false } }),
+      this.prisma.downloadLog.count(),
+      this.prisma.order.aggregate({ _sum: { total: true }, where: { status: { in: ['PAID', 'FULFILLED'] } } }),
+      this.prisma.order.findMany({ take: 8, orderBy: { createdAt: 'desc' }, include: { user: true, items: { include: { product: true } } } }),
+    ]);
+    return {
+      metrics: { users, products, orders, payments, events, published, pendingReviews: reviews, downloads, revenue: Number(revenue._sum.total || 0) },
+      recentOrders,
+    };
   }
 
-  // Books
-  @Get('books')
-  async getBooks(
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-    @Query('status') status?: string,
-    @Query('search') search?: string,
-  ) {
-    return this.ownerService.getBooks(
-      parseInt(page || '1'),
-      parseInt(limit || '10'),
-      { status, search }
-    );
+  @Get('products')
+  products(@Query('search') search?: string) {
+    return this.prisma.product.findMany({
+      where: search ? { OR: [{ title: { contains: search, mode: 'insensitive' } }, { slug: { contains: search, mode: 'insensitive' } }] } : undefined,
+      include: { author: true, category: true, _count: { select: { orderItems: true, reviews: true } } },
+      orderBy: { updatedAt: 'desc' },
+    });
   }
 
-  @Get('books/:id')
-  async getBook(@Param('id') id: string) {
-    return this.ownerService.getBook(id);
-  }
-
-  @Post('books')
-  async createBook(@Body() data: any) {
-    return this.ownerService.createBook(data);
-  }
-
-  @Put('books/:id')
-  async updateBook(@Param('id') id: string, @Body() data: any) {
-    return this.ownerService.updateBook(id, data);
-  }
-
-  @Post('books/:id/publish')
-  async publishBook(@Param('id') id: string) {
-    return this.ownerService.publishBook(id);
-  }
-
-  @Post('books/:id/unpublish')
-  async unpublishBook(@Param('id') id: string) {
-    return this.ownerService.unpublishBook(id);
-  }
-
-  @Delete('books/:id')
-  async deleteBook(@Param('id') id: string) {
-    return this.ownerService.deleteBook(id);
-  }
-
-  @Post('books/:id/upload')
-  @UseInterceptors(
-    FileInterceptor('file', {
-      limits: { fileSize: 500 * 1024 * 1024 }, // 500MB
-      fileFilter: (req, file, cb) => {
-        const allowedMimes = [
-          'application/pdf',
-          'application/epub+zip',
-          'image/jpeg',
-          'image/png',
-          'audio/mpeg',
-          'audio/wav',
-        ];
-        if (allowedMimes.includes(file.mimetype)) {
-          cb(null, true);
-        } else {
-          cb(new BadRequestException('Invalid file type'), false);
-        }
+  @Post('products')
+  async createProduct(@Body() body: Record<string, any>) {
+    const authorId = body.authorId || (await this.prisma.author.findFirst())?.id;
+    const categoryId = body.categoryId || (await this.prisma.category.findFirst())?.id;
+    if (!authorId || !categoryId) throw new NotFoundException('Create an author and category first');
+    const product = await this.prisma.product.create({
+      data: {
+        title: String(body.title || 'Untitled book'),
+        slug: String(body.slug || body.title || 'untitled-book').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+        description: String(body.description || ''),
+        price: body.price ?? 0,
+        currency: String(body.currency || 'USD'),
+        status: body.status || 'DRAFT',
+        authorId,
+        categoryId,
       },
-    })
-  )
-  async uploadBookFile(
-    @Param('id') id: string,
-    @UploadedFile() file: Express.Multer.File,
-    @Query('type') fileType: string
-  ) {
-    if (!file) throw new BadRequestException('No file provided');
-    if (!fileType) throw new BadRequestException('File type required');
-    return this.ownerService.uploadBookFile(id, file, fileType);
+      include: { author: true, category: true },
+    });
+    return product;
   }
 
-  // Authors
-  @Get('authors')
-  async getAuthors(
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-    @Query('search') search?: string,
-  ) {
-    return this.ownerService.getAuthors(
-      parseInt(page || '1'),
-      parseInt(limit || '10'),
-      search
-    );
+  @Patch('products/:id')
+  async updateProduct(@Param('id') id: string, @Body() body: Record<string, any>) {
+    const existing = await this.prisma.product.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException('Product not found');
+    const allowed = ['title', 'slug', 'description', 'price', 'currency', 'status', 'authorId', 'categoryId'];
+    const data = Object.fromEntries(Object.entries(body).filter(([key, value]) => allowed.includes(key) && value !== undefined));
+    return this.prisma.product.update({ where: { id }, data: data as any, include: { author: true, category: true } });
   }
 
-  @Post('authors')
-  async createAuthor(@Body() data: any) {
-    return this.ownerService.createAuthor(data);
+  @Delete('products/:id')
+  async archiveProduct(@Param('id') id: string) {
+    return this.prisma.product.update({ where: { id }, data: { status: 'DRAFT' } });
   }
 
-  @Put('authors/:id')
-  async updateAuthor(@Param('id') id: string, @Body() data: any) {
-    return this.ownerService.updateAuthor(id, data);
-  }
-
-  @Delete('authors/:id')
-  async deleteAuthor(@Param('id') id: string) {
-    return this.ownerService.deleteAuthor(id);
-  }
-
-  // Categories
-  @Get('categories')
-  async getCategories(
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-    @Query('search') search?: string,
-  ) {
-    return this.ownerService.getCategories(
-      parseInt(page || '1'),
-      parseInt(limit || '10'),
-      search
-    );
-  }
-
-  @Post('categories')
-  async createCategory(@Body() data: any) {
-    return this.ownerService.createCategory(data);
-  }
-
-  @Put('categories/:id')
-  async updateCategory(@Param('id') id: string, @Body() data: any) {
-    return this.ownerService.updateCategory(id, data);
-  }
-
-  @Delete('categories/:id')
-  async deleteCategory(@Param('id') id: string) {
-    return this.ownerService.deleteCategory(id);
-  }
-
-  // Orders
-  @Get('orders')
-  async getOrders(
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-    @Query('status') status?: string,
-    @Query('paymentStatus') paymentStatus?: string,
-  ) {
-    return this.ownerService.getOrders(
-      parseInt(page || '1'),
-      parseInt(limit || '10'),
-      { status, paymentStatus }
-    );
-  }
-
-  @Get('orders/:id')
-  async getOrder(@Param('id') id: string) {
-    return this.ownerService.getOrder(id);
-  }
-
-  // Users
-  @Get('users')
-  async getUsers(
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-    @Query('search') search?: string,
-  ) {
-    return this.ownerService.getUsers(
-      parseInt(page || '1'),
-      parseInt(limit || '10'),
-      search
-    );
-  }
-
-  @Get('users/:id')
-  async getUser(@Param('id') id: string) {
-    return this.ownerService.getUser(id);
-  }
-
-  @Put('users/:id/role')
-  async updateUserRole(@Param('id') id: string, @Body() data: any) {
-    return this.ownerService.updateUserRole(id, data.role);
-  }
-
-  @Post('users/:userId/library/:bookId')
-  async grantLibraryAccess(@Param('userId') userId: string, @Param('bookId') bookId: string) {
-    return this.ownerService.grantLibraryAccess(userId, bookId);
-  }
-
-  @Delete('users/:userId/library/:bookId')
-  async revokeLibraryAccess(@Param('userId') userId: string, @Param('bookId') bookId: string) {
-    return this.ownerService.revokeLibraryAccess(userId, bookId);
-  }
-
-  // Reviews
   @Get('reviews')
-  async getReviews(
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-    @Query('approved') approved?: string,
-  ) {
-    const approvedBool = approved === 'true' ? true : approved === 'false' ? false : undefined;
-    return this.ownerService.getReviews(
-      parseInt(page || '1'),
-      parseInt(limit || '10'),
-      approvedBool
-    );
+  reviews(@Query('approved') approved?: string) {
+    return this.prisma.review.findMany({ where: approved === undefined ? undefined : { approved: approved === 'true' }, include: { user: true, product: true }, orderBy: { createdAt: 'desc' } });
   }
 
-  @Post('reviews/:id/approve')
-  async approveReview(@Param('id') id: string) {
-    return this.ownerService.approveReview(id);
+  @Patch('reviews/:id')
+  review(@Param('id') id: string, @Body() body: { approved?: boolean }) {
+    return this.prisma.review.update({ where: { id }, data: { approved: Boolean(body.approved) }, include: { user: true, product: true } });
   }
 
-  @Post('reviews/:id/reject')
-  async rejectReview(@Param('id') id: string, @Body('reason') reason?: string) {
-    return this.ownerService.rejectReview(id, reason);
+  @Get('pages')
+  pages() {
+    return this.prisma.page.findMany({ include: { sections: true, versions: { orderBy: { version: 'desc' }, take: 5 } }, orderBy: { slug: 'asc' } });
   }
 
-  @Post('reviews/:id/archive')
-  async archiveReview(@Param('id') id: string) {
-    return this.ownerService.archiveReview(id);
+  @Post('pages')
+  async createPage(@Body() body: Record<string, any>) {
+    return this.prisma.page.create({ data: { slug: String(body.slug), title: String(body.title), status: String(body.status || 'DRAFT'), sections: { create: Array.isArray(body.sections) ? body.sections.map((section: any) => ({ type: String(section.type || 'content'), content: section.content || {} })) : [] } }, include: { sections: true } });
   }
 
-  @Get('library')
-  async getLibrary(@Query('page') page?: string, @Query('limit') limit?: string) {
-    return this.ownerService.getLibraryAccess(parseInt(page || '1'), parseInt(limit || '10'));
+  @Patch('pages/:id')
+  async updatePage(@Param('id') id: string, @Body() body: Record<string, any>) {
+    const page = await this.prisma.page.findUnique({ where: { id }, include: { versions: true } });
+    if (!page) throw new NotFoundException('Page not found');
+    const nextVersion = page.versions.reduce((max, version) => Math.max(max, version.version), 0) + 1;
+    const content = body.content || { sections: body.sections || [] };
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await tx.page.update({ where: { id }, data: { title: body.title ?? page.title, slug: body.slug ?? page.slug, status: body.status ?? page.status } });
+      await tx.pageVersion.create({ data: { pageId: id, version: nextVersion, content } });
+      if (Array.isArray(body.sections)) {
+        await tx.section.deleteMany({ where: { pageId: id } });
+        await tx.section.createMany({ data: body.sections.map((section: any) => ({ pageId: id, type: String(section.type || 'content'), content: section.content || {} })) });
+      }
+      return updated;
+    });
   }
 
-  @Post('library/:id/extend')
-  async extendLibrary(@Param('id') id: string, @Body('expiryDate') expiryDate: string) {
-    return this.ownerService.extendLibraryAccess(id, new Date(expiryDate));
-  }
-
-  @Get('media')
-  async getMedia(@Query('page') page?: string, @Query('limit') limit?: string, @Query('type') type?: string) {
-    return this.ownerService.getMedia(parseInt(page || '1'), parseInt(limit || '10'), type);
-  }
-
-  @Post('media/upload')
-  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 50 * 1024 * 1024 } }))
-  async uploadMedia(@UploadedFile() file: Express.Multer.File, @Body('type') type?: string) {
-    if (!file) throw new BadRequestException('No file provided');
-    return this.ownerService.uploadMedia(file, type);
-  }
-
-  @Delete('media/:id')
-  async deleteMedia(@Param('id') id: string) {
-    return this.ownerService.deleteMedia(id);
-  }
-
-  // Lessons
-  @Get('lessons')
-  async getLessons(@Query('page') page?: string, @Query('limit') limit?: string) {
-    return this.ownerService.getLessons(parseInt(page || '1'), parseInt(limit || '10'));
-  }
-
-  @Get('lessons/:id')
-  async getLesson(@Param('id') id: string) {
-    return this.ownerService.getLesson(id);
-  }
-
-  @Post('lessons')
-  async createLesson(@Body() data: any) {
-    return this.ownerService.createLesson(data);
-  }
-
-  @Put('lessons/:id')
-  async updateLesson(@Param('id') id: string, @Body() data: any) {
-    return this.ownerService.updateLesson(id, data);
-  }
-
-  @Post('lessons/:id/publish')
-  async publishLesson(@Param('id') id: string) {
-    return this.ownerService.publishLesson(id);
-  }
-
-  @Delete('lessons/:id')
-  async deleteLesson(@Param('id') id: string) {
-    return this.ownerService.deleteLesson(id);
-  }
-
-  // Assessments
-  @Get('assessments')
-  async getAssessments(@Query('page') page?: string, @Query('limit') limit?: string) {
-    return this.ownerService.getAssessments(parseInt(page || '1'), parseInt(limit || '10'));
-  }
-
-  @Get('assessments/:id')
-  async getAssessment(@Param('id') id: string) {
-    return this.ownerService.getAssessment(id);
-  }
-
-  @Post('assessments')
-  async createAssessment(@Body() data: any) {
-    return this.ownerService.createAssessment(data);
-  }
-
-  @Put('assessments/:id')
-  async updateAssessment(@Param('id') id: string, @Body() data: any) {
-    return this.ownerService.updateAssessment(id, data);
-  }
-
-  @Post('assessments/:id/publish')
-  async publishAssessment(@Param('id') id: string) {
-    return this.ownerService.publishAssessment(id);
-  }
-
-  @Delete('assessments/:id')
-  async deleteAssessment(@Param('id') id: string) {
-    return this.ownerService.deleteAssessment(id);
-  }
-
-  @Get('cms')
-  async getCMS(@Query('type') type: string, @Query('language') language: string) {
-    return this.ownerService.getCMSContent(type, language);
-  }
-
-  @Put('cms/:id')
-  async updateCMS(@Param('id') id: string, @Body('content') content: any) {
-    return this.ownerService.updateCMSContent(id, content);
-  }
-
-  @Post('cms/:id/publish')
-  async publishCMS(@Param('id') id: string) {
-    return this.ownerService.publishCMS(id);
-  }
-
-  @Get('analytics')
-  async getAnalytics() {
-    return this.ownerService.getAnalytics();
+  @Post('pages/:id/publish')
+  publishPage(@Param('id') id: string) {
+    return this.prisma.page.update({ where: { id }, data: { status: 'PUBLISHED' }, include: { sections: true } });
   }
 
   @Get('settings')
-  async getSettings() {
-    return this.ownerService.getSettings();
+  settings() { return this.prisma.siteSettings.findMany({ orderBy: { key: 'asc' } }); }
+
+  @Put('settings/:key')
+  setting(@Param('key') key: string, @Body() body: { value: any }) {
+    return this.prisma.siteSettings.upsert({ where: { key }, update: { value: body.value }, create: { key, value: body.value } });
   }
 
-  @Put('settings')
-  async updateSettings(@Body() data: Record<string, unknown>) {
-    return this.ownerService.updateSettings(data);
-  }
+  @Get('audit')
+  audit(@Query('limit') limit = '50') { return this.prisma.auditLog.findMany({ take: Math.min(Number(limit) || 50, 200), include: { user: true }, orderBy: { createdAt: 'desc' } }); }
 
-  // Audit Logs
-  @Get('audit-logs')
-  async getAuditLogs(
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-    @Query('action') action?: string,
-    @Query('userId') userId?: string,
-  ) {
-    return this.ownerService.getAuditLogs(
-      parseInt(page || '1'),
-      parseInt(limit || '10'),
-      { action, userId }
-    );
+  @Get('analytics')
+  analytics() {
+    return this.prisma.analyticsEvent.groupBy({ by: ['name'], _count: { _all: true }, orderBy: { _count: { name: 'desc' } }, take: 20 });
   }
 }
+
+// Prisma's Section model stores its visual order in JSON-compatible content in older databases.
+// The controller intentionally keeps the payload flexible so existing databases remain compatible.
