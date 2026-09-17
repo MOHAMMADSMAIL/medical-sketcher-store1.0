@@ -292,6 +292,24 @@ class OwnerAPIClient {
   async deleteMedia(id: string) {
     return this.fetchWithAuth(`/owner/media/${id}`, { method: 'DELETE' });
   }
+  // Learning Content: Reading, Writing, Listening and Speaking
+  async getLearningContent(page = 1, limit = 20, filters?: any) {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    for (const key of ['type', 'status', 'visibility', 'search']) if (filters?.[key]) params.append(key, String(filters[key]));
+    return this.fetchWithAuth(`/owner/learning-content?${params.toString()}`);
+  }
+  async createLearningContent(data: any) {
+    return this.fetchWithAuth('/owner/learning-content', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async updateLearningContent(id: string, data: any) {
+    return this.fetchWithAuth(`/owner/learning-content/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
+  }
+  async publishLearningContent(id: string) {
+    return this.fetchWithAuth(`/owner/learning-content/${id}/publish`, { method: 'POST' });
+  }
+  async archiveLearningContent(id: string) {
+    return this.fetchWithAuth(`/owner/learning-content/${id}/archive`, { method: 'POST' });
+  }
 
   // Audit Logs
   async getAuditLogs(page = 1, limit = 10, filters?: any) {

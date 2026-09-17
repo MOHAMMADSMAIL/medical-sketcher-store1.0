@@ -20,9 +20,10 @@ import { ObservabilityController } from './observability.controller';
 import { RolesGuard } from './roles.guard';
 import { OwnerController } from './owner.controller';
 import { OwnerService } from './owner.service';
+import { LearningContentController } from './learning-content.controller';
 
 @Module({ providers: [PrismaService], exports: [PrismaService] })
 export class DatabaseModule {}
 
-@Module({ imports: [DatabaseModule], controllers: [ProductsController, AuthController, CartController, OrdersController, PaymentController, LibraryController, WishlistController, ReviewsController, CmsController, ObservabilityController, OwnerController], providers: [ProductsService, AuthService, AuthGuard, CartService, OrdersService, PaymentService, LibraryService, RolesGuard, OwnerService] })
+@Module({ imports: [DatabaseModule], controllers: [ProductsController, AuthController, CartController, OrdersController, PaymentController, LibraryController, WishlistController, ReviewsController, CmsController, ObservabilityController, OwnerController, LearningContentController], providers: [ProductsService, AuthService, AuthGuard, CartService, OrdersService, PaymentService, LibraryService, RolesGuard, OwnerService] })
 export class AppModule {}

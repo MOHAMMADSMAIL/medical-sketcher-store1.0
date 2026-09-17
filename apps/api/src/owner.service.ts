@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
-import * as fs from 'fs';
 import * as path from 'path';
+import { LocalStorageProvider, safeStorageKey } from './storage.provider';
 
 @Injectable()
 export class OwnerService {
+  private readonly storage = new LocalStorageProvider();
   constructor(private prisma: PrismaService) {}
 
   async getDashboardStats() {
@@ -121,21 +122,16 @@ export class OwnerService {
   }
 
   // Upload book file
-  async uploadBookFile(bookId: string, file: Express.Multer.File, fileType: string) {
-    const storageDir = path.join(process.cwd(), 'storage', bookId);
-    if (!fs.existsSync(storageDir)) {
-      fs.mkdirSync(storageDir, { recursive: true });
-    }
-
-    const fileName = `${fileType}-${Date.now()}${path.extname(file.originalname)}`;
-    const filePath = path.join(storageDir, fileName);
-
-    fs.writeFileSync(filePath, file.buffer);
+  async uploadBookFile(bookId: string, file: { originalname: string; mimetype: string; size: number; buffer: Buffer }, fileType: string) {
+    const extension = path.extname(file.originalname).toLowerCase().replace(/[^a-z0-9.]/g, '');
+    const fileName = `${fileType}-${Date.now()}${extension}`;
+    const storageKey = safeStorageKey(`${bookId}/${fileName}`);
+    await this.storage.put(storageKey, file.buffer);
 
     const media = await this.prisma.media.create({
       data: {
         productId: bookId,
-        storageKey: `${bookId}/${fileName}`,
+        storageKey,
         mimeType: file.mimetype,
         size: file.size,
       },
@@ -410,23 +406,19 @@ export class OwnerService {
     return { items, pagination: { page, limit, total, pages: Math.ceil(total / limit) } };
   }
 
-  async uploadMedia(file: Express.Multer.File, type?: string) {
-    const storageDir = path.join(process.cwd(), 'storage', 'media');
-    if (!fs.existsSync(storageDir)) {
-      fs.mkdirSync(storageDir, { recursive: true });
-    }
-
-    const fileName = `${Date.now()}-${file.originalname}`;
-    const filePath = path.join(storageDir, fileName);
-    fs.writeFileSync(filePath, file.buffer);
+  async uploadMedia(file: { originalname: string; mimetype: string; size: number; buffer: Buffer }, type?: string) {
+    const originalName = file.originalname.normalize('NFKC').replace(/[^a-zA-Z0-9._-]+/g, '-');
+    const fileName = `${Date.now()}-${originalName || 'upload'}`;
+    const storageKey = safeStorageKey(`media/${fileName}`);
+    await this.storage.put(storageKey, file.buffer);
 
     const media = await this.prisma.media.create({
       data: {
-        storageKey: `media/${fileName}`,
+        storageKey,
         mimeType: file.mimetype,
         size: file.size,
         type: type || file.mimetype.split('/')[0],
-        originalName: file.originalname,
+        originalName,
       },
     });
 
