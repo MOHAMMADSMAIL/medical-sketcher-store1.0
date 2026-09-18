@@ -1,0 +1,1319 @@
+أكيد. هذا **UML Architecture + Checklist مخصص للـ AI** حتى يفحص مشروع **Aurelia Books v1.0** ويتأكد أن كل Module موجود، وكل علاقة بين الـ Frontend والـ API والـ Database والخدمات الخارجية مربوطة وفعّالة.
+
+### 1. UML — System Architecture
+
+انسخه كما هو في أي أداة تدعم **Mermaid**:
+
+```mermaid
+flowchart TB
+
+    %% =========================
+    %% CLIENT
+    %% =========================
+    USER[Customer / Visitor]
+    ADMIN[Admin]
+    OWNER[Owner]
+
+    WEB[Next.js 15 Web App]
+
+    USER --> WEB
+    ADMIN --> WEB
+    OWNER --> WEB
+
+    %% =========================
+    %% FRONTEND
+    %% =========================
+    subgraph FRONTEND["apps/web — Frontend"]
+        HOME[Home]
+        CATALOG[Book Catalog]
+        PRODUCT[Product Details]
+        SEARCH[Search]
+        CART_UI[Cart]
+        CHECKOUT_UI[Checkout]
+        LIBRARY_UI[My Library]
+        WISHLIST_UI[Wishlist]
+        REVIEWS_UI[Reviews]
+        AUTH_UI[Login / Register]
+        ACCOUNT[Account]
+        CMS_UI[CMS Pages]
+        OWNER_UI[Owner Dashboard]
+        ANALYTICS_UI[Analytics]
+        VIEWER[Digital Book Viewer]
+        DOWNLOAD_UI[Protected Download]
+        THREE[Three.js / React Three Fiber]
+        MOTION[Framer Motion]
+    end
+
+    WEB --> HOME
+    WEB --> CATALOG
+    WEB --> PRODUCT
+    WEB --> SEARCH
+    WEB --> CART_UI
+    WEB --> CHECKOUT_UI
+    WEB --> LIBRARY_UI
+    WEB --> WISHLIST_UI
+    WEB --> REVIEWS_UI
+    WEB --> AUTH_UI
+    WEB --> ACCOUNT
+    WEB --> CMS_UI
+    WEB --> OWNER_UI
+
+    PRODUCT --> THREE
+    WEB --> MOTION
+    LIBRARY_UI --> VIEWER
+    VIEWER --> THREE
+    LIBRARY_UI --> DOWNLOAD_UI
+
+    %% =========================
+    %% API
+    %% =========================
+    API[NestJS API]
+
+    WEB -->|HTTP / REST + HTTP-only Cookie| API
+
+    subgraph BACKEND["apps/api — NestJS"]
+        AUTH[Auth Module]
+        USERS[Users / Roles]
+        PRODUCTS[Products Module]
+        CART[Cart Module]
+        ORDERS[Orders Module]
+        PAYMENTS[Payments Module]
+        DOWNLOADS[Downloads Module]
+        LIBRARY[Library Module]
+        WISHLIST[Wishlist Module]
+        REVIEWS[Reviews Module]
+        CMS[CMS Module]
+        ANALYTICS[Analytics Module]
+        OWNER_MOD[Owner Module]
+        STORAGE[Storage Module]
+        EMAIL[Email Module]
+    end
+
+    API --> AUTH
+    API --> USERS
+    API --> PRODUCTS
+    API --> CART
+    API --> ORDERS
+    API --> PAYMENTS
+    API --> DOWNLOADS
+    API --> LIBRARY
+    API --> WISHLIST
+    API --> REVIEWS
+    API --> CMS
+    API --> ANALYTICS
+    API --> OWNER_MOD
+    API --> STORAGE
+    API --> EMAIL
+
+    %% =========================
+    %% RELATIONS
+    %% =========================
+    AUTH --> USERS
+    PRODUCTS --> CART
+    PRODUCTS --> ORDERS
+    PRODUCTS --> WISHLIST
+    PRODUCTS --> REVIEWS
+
+    CART --> ORDERS
+    ORDERS --> PAYMENTS
+    ORDERS --> LIBRARY
+
+    PAYMENTS --> ORDERS
+    LIBRARY --> DOWNLOADS
+    DOWNLOADS --> STORAGE
+
+    CMS --> STORAGE
+    PRODUCTS --> STORAGE
+
+    ORDERS --> EMAIL
+    AUTH --> EMAIL
+
+    OWNER_MOD --> PRODUCTS
+    OWNER_MOD --> ORDERS
+    OWNER_MOD --> CMS
+    OWNER_MOD --> ANALYTICS
+    OWNER_MOD --> USERS
+
+    %% =========================
+    %% DATABASE
+    %% =========================
+    PRISMA[Prisma ORM]
+    DB[(PostgreSQL)]
+
+    BACKEND --> PRISMA
+    PRISMA --> DB
+
+    %% =========================
+    %% DATABASE MODELS
+    %% =========================
+    subgraph DATABASE["Prisma Models"]
+        USER_DB[(User)]
+        SESSION[(Session)]
+        AUTHOR[(Author)]
+        CATEGORY[(Category)]
+        PRODUCT_DB[(Product)]
+        CART_DB[(Cart)]
+        CART_ITEM[(CartItem)]
+        ORDER_DB[(Order)]
+        ORDER_ITEM[(OrderItem)]
+        PAYMENT_DB[(Payment)]
+        DOWNLOAD_PERMISSION[(DownloadPermission)]
+        PAGE[(Page)]
+        SECTION[(Section)]
+        PAGE_VERSION[(PageVersion)]
+        SITE_SETTINGS[(SiteSettings)]
+        WISHLIST_DB[(Wishlist)]
+        REVIEW_DB[(Review)]
+        MEDIA[(Media)]
+        AUDIT[(AuditLog)]
+        DOWNLOAD_LOG[(DownloadLog)]
+        NEWSLETTER[(NewsletterSubscriber)]
+        EMAIL_TEMPLATE[(EmailTemplate)]
+        ANALYTICS_EVENT[(AnalyticsEvent)]
+    end
+
+    DB --> USER_DB
+    DB --> SESSION
+    DB --> AUTHOR
+    DB --> CATEGORY
+    DB --> PRODUCT_DB
+    DB --> CART_DB
+    DB --> CART_ITEM
+    DB --> ORDER_DB
+    DB --> ORDER_ITEM
+    DB --> PAYMENT_DB
+    DB --> DOWNLOAD_PERMISSION
+    DB --> PAGE
+    DB --> SECTION
+    DB --> PAGE_VERSION
+    DB --> SITE_SETTINGS
+    DB --> WISHLIST_DB
+    DB --> REVIEW_DB
+    DB --> MEDIA
+    DB --> AUDIT
+    DB --> DOWNLOAD_LOG
+    DB --> NEWSLETTER
+    DB --> EMAIL_TEMPLATE
+    DB --> ANALYTICS_EVENT
+
+    %% =========================
+    %% EXTERNAL SERVICES
+    %% =========================
+    S3[S3 / Object Storage]
+    LOCAL[Local Storage]
+    PAYMENT_PROVIDER[Payment Provider]
+    EMAIL_PROVIDER[Email Provider]
+
+    STORAGE --> S3
+    STORAGE --> LOCAL
+    PAYMENTS --> PAYMENT_PROVIDER
+    EMAIL --> EMAIL_PROVIDER
+
+    %% =========================
+    %% SECURITY
+    %% =========================
+    COOKIE[HTTP-only Secure Session Cookie]
+    GUARD[Auth Guard]
+    ROLE_GUARD[Roles Guard]
+    VALIDATION[Validation Pipe]
+    RATE_LIMIT[Rate Limiting]
+
+    AUTH --> COOKIE
+    API --> GUARD
+    GUARD --> ROLE_GUARD
+    API --> VALIDATION
+    API --> RATE_LIMIT
+
+    %% =========================
+    %% OWNER
+    %% =========================
+    OWNER --> OWNER_UI
+    OWNER_UI --> OWNER_MOD
+
+    %% =========================
+    %% ANALYTICS
+    %% =========================
+    WEB -->|Events| ANALYTICS
+    ANALYTICS --> ANALYTICS_EVENT
+```
+
+---
+
+# 2. UML — Database ERD
+
+وهذا مهم جداً للـ AI لأنه يفحص العلاقات نفسها:
+
+```mermaid
+erDiagram
+
+    USER ||--o| CART : owns
+    USER ||--o{ SESSION : has
+    USER ||--o{ ORDER : places
+    USER ||--o{ WISHLIST : has
+    USER ||--o{ REVIEW : writes
+    USER ||--o{ DOWNLOAD_PERMISSION : receives
+    USER ||--o{ AUDIT_LOG : creates
+    USER ||--o{ DOWNLOAD_LOG : generates
+
+    AUTHOR ||--o{ PRODUCT : writes
+    CATEGORY ||--o{ PRODUCT : contains
+
+    PRODUCT ||--o{ CART_ITEM : included_in
+    CART ||--o{ CART_ITEM : contains
+    PRODUCT ||--o{ ORDER_ITEM : purchased_as
+    ORDER ||--o{ ORDER_ITEM : contains
+
+    ORDER ||--o{ PAYMENT : has
+
+    PRODUCT ||--o{ DOWNLOAD_PERMISSION : grants
+    DOWNLOAD_PERMISSION ||--o{ DOWNLOAD_LOG : tracks
+    PRODUCT ||--o{ DOWNLOAD_LOG : logs
+
+    PAGE ||--o{ SECTION : contains
+    PAGE ||--o{ PAGE_VERSION : versions
+    PRODUCT ||--o{ MEDIA : has
+
+    USER ||--o{ ANALYTICS_EVENT : triggers
+
+    USER {
+        string id PK
+        string email UK
+        string passwordHash
+        enum role
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    SESSION {
+        string id PK
+        string userId FK
+        string tokenHash UK
+        datetime expiresAt
+    }
+
+    AUTHOR {
+        string id PK
+        string name
+        string slug UK
+        string bio
+    }
+
+    CATEGORY {
+        string id PK
+        string name
+        string slug UK
+    }
+
+    PRODUCT {
+        string id PK
+        string title
+        string slug UK
+        string description
+        decimal price
+        string currency
+        enum status
+        string authorId FK
+        string categoryId FK
+    }
+
+    CART {
+        string id PK
+        string userId FK UK
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    CART_ITEM {
+        string id PK
+        string cartId FK
+        string productId FK
+        int quantity
+    }
+
+    ORDER {
+        string id PK
+        string userId FK
+        decimal total
+        string currency
+        enum status
+        datetime createdAt
+    }
+
+    ORDER_ITEM {
+        string id PK
+        string orderId FK
+        string productId FK
+        decimal price
+        int quantity
+    }
+
+    PAYMENT {
+        string id PK
+        string orderId FK
+        decimal amount
+        string provider
+        enum status
+        string transactionId
+    }
+
+    DOWNLOAD_PERMISSION {
+        string id PK
+        string userId FK
+        string productId FK
+        string orderId FK
+        datetime expiresAt
+    }
+
+    WISHLIST {
+        string id PK
+        string userId FK
+        string productId FK
+    }
+
+    REVIEW {
+        string id PK
+        string userId FK
+        string productId FK
+        int rating
+        string comment
+    }
+
+    PAGE {
+        string id PK
+        string slug UK
+        string title
+        enum status
+    }
+
+    SECTION {
+        string id PK
+        string pageId FK
+        string type
+        json content
+    }
+
+    PAGE_VERSION {
+        string id PK
+        string pageId FK
+        int version
+        json content
+    }
+
+    MEDIA {
+        string id PK
+        string productId FK
+        string url
+        enum type
+    }
+
+    AUDIT_LOG {
+        string id PK
+        string userId FK
+        string action
+        json metadata
+    }
+
+    DOWNLOAD_LOG {
+        string id PK
+        string userId FK
+        string productId FK
+        string permissionId FK
+        enum status
+        datetime createdAt
+    }
+
+    ANALYTICS_EVENT {
+        string id PK
+        string userId FK
+        enum type
+        json metadata
+        datetime createdAt
+    }
+```
+
+---
+
+# 3. AI Master Checklist — Aurelia Books v1.0
+
+هاي أهم قطعة. أعطها للـ AI مع المشروع واطلب منه **ما يعتبر المشروع مكتمل إلا إذا كل البنود Passed**.
+
+```text
+===========================================================
+AURELIA BOOKS v1.0 — AI PROJECT VERIFICATION CHECKLIST
+===========================================================
+
+ROLE:
+You are a Senior Full-Stack Architect, Code Auditor, QA Engineer,
+Security Engineer, Database Engineer and DevOps Engineer.
+
+Your job is NOT to assume that the project works.
+
+You MUST inspect the actual source code and verify every connection.
+
+RULE:
+Aurelia Books v1.0 is NOT COMPLETE unless all CRITICAL checks pass.
+
+Allowed statuses:
+[PASS]
+[FAIL]
+[WARN]
+[NOT FOUND]
+
+Never mark a feature PASS only because a file exists.
+The implementation must actually be connected and functional.
+
+===========================================================
+1. PROJECT STRUCTURE
+===========================================================
+
+[ ] apps/api exists
+[ ] apps/web exists
+[ ] packages/types exists
+[ ] packages/config exists
+[ ] prisma/schema.prisma exists
+[ ] prisma/seed.ts exists
+[ ] docker-compose.yml exists
+[ ] .env.example exists
+[ ] README.md exists
+[ ] root package.json exists
+[ ] root tsconfig.json exists
+
+Verify there are no placeholder-only files.
+
+===========================================================
+2. FRONTEND — NEXT.JS
+===========================================================
+
+[ ] Next.js application starts
+[ ] React is configured
+[ ] TypeScript compiles
+[ ] Tailwind CSS works
+[ ] Framer Motion is installed and actually used
+[ ] React Three Fiber is installed
+[ ] Three.js is installed
+[ ] Frontend pages render without runtime errors
+[ ] API URL comes from environment configuration
+[ ] No hardcoded production secrets
+[ ] No broken imports
+[ ] No missing components
+[ ] No dead routes
+[ ] No placeholder TODO implementation in critical features
+
+Verify:
+- Home
+- Catalog
+- Product Details
+- Search
+- Login
+- Register
+- Cart
+- Checkout
+- Library
+- Wishlist
+- Reviews
+- Account
+- CMS pages
+- Owner dashboard
+
+===========================================================
+3. BACKEND — NESTJS
+===========================================================
+
+[ ] NestJS application starts
+[ ] Global API prefix configured
+[ ] CORS configured
+[ ] Helmet configured
+[ ] ValidationPipe configured
+[ ] Cookie parser configured
+[ ] Swagger works
+[ ] Environment variables are loaded correctly
+
+Required modules:
+
+[ ] Auth
+[ ] Products
+[ ] Cart
+[ ] Orders
+[ ] Payments
+[ ] Downloads
+[ ] Library
+[ ] Wishlist
+[ ] Reviews
+[ ] CMS
+[ ] Analytics
+[ ] Owner
+[ ] Storage
+[ ] Email
+
+Every module must contain:
+
+[ ] module
+[ ] controller where required
+[ ] service
+[ ] DTOs where required
+[ ] Prisma integration
+[ ] proper imports/exports
+[ ] error handling
+[ ] authentication where required
+[ ] authorization where required
+
+===========================================================
+4. AUTHENTICATION
+===========================================================
+
+[ ] Register works
+[ ] Login works
+[ ] Logout works
+[ ] Current user endpoint works
+[ ] Password hashing works
+[ ] Password is never stored in plaintext
+[ ] Session/token generation works
+[ ] Session token is hashed before storage
+[ ] HTTP-only cookie is used
+[ ] Cookie expiration is correct
+[ ] Expired sessions are rejected
+[ ] Invalid sessions are rejected
+[ ] Auth Guard works
+[ ] Roles Guard works
+[ ] CUSTOMER role works
+[ ] ADMIN role works
+[ ] OWNER role works
+
+Test:
+
+REGISTER
+    ↓
+LOGIN
+    ↓
+COOKIE
+    ↓
+AUTH GUARD
+    ↓
+ME
+    ↓
+LOGOUT
+    ↓
+SESSION INVALID
+
+===========================================================
+5. PRODUCTS
+===========================================================
+
+[ ] Product list works
+[ ] Product details works
+[ ] Product slug works
+[ ] Search works
+[ ] Categories work
+[ ] Authors work
+[ ] Product status works
+[ ] Product media works
+[ ] Product price works
+[ ] Currency works
+
+Verify:
+
+Product
+    ↓
+Author
+    ↓
+Category
+    ↓
+Media
+
+No broken foreign keys.
+
+===========================================================
+6. CART
+===========================================================
+
+[ ] Cart is created for authenticated user
+[ ] Add product works
+[ ] Update quantity works
+[ ] Remove item works
+[ ] Clear cart works
+[ ] Cart total is calculated server-side
+[ ] User cannot access another user's cart
+[ ] Invalid product IDs are rejected
+[ ] Quantity validation exists
+
+Verify:
+
+USER
+ ↓
+CART
+ ↓
+CART_ITEM
+ ↓
+PRODUCT
+
+===========================================================
+7. CHECKOUT / ORDERS
+===========================================================
+
+[ ] Checkout endpoint works
+[ ] Order is created server-side
+[ ] Order items are created
+[ ] Prices are taken from trusted server data
+[ ] Client cannot modify final price
+[ ] Total is recalculated server-side
+[ ] Empty cart cannot create order
+[ ] Order belongs to correct user
+[ ] Order status transitions are valid
+[ ] Order history works
+
+Verify:
+
+CART
+ ↓
+CHECKOUT
+ ↓
+ORDER
+ ↓
+ORDER_ITEM
+ ↓
+PAYMENT
+ ↓
+LIBRARY
+
+===========================================================
+8. PAYMENTS
+===========================================================
+
+[ ] Payment abstraction exists
+[ ] Development provider exists
+[ ] Production provider abstraction exists
+[ ] Payment creation works
+[ ] Payment status is stored
+[ ] Transaction/reference ID is stored
+[ ] Webhook handling exists if provider requires it
+[ ] Webhook signature validation exists
+[ ] Duplicate payment events are handled safely
+[ ] Payment failure does not grant library access
+[ ] Successful payment grants correct access
+
+CRITICAL:
+
+PAYMENT SUCCESS
+        ↓
+ORDER PAID
+        ↓
+DOWNLOAD PERMISSION
+        ↓
+LIBRARY ACCESS
+
+Never grant access before successful payment.
+
+===========================================================
+9. LIBRARY
+===========================================================
+
+[ ] Purchased books appear in user's library
+[ ] Only purchased books appear
+[ ] User cannot see another user's library
+[ ] Library endpoint is authenticated
+[ ] Library is connected to orders
+[ ] Library is connected to download permissions
+[ ] Viewer can open authorized books
+
+===========================================================
+10. DOWNLOAD SECURITY
+===========================================================
+
+[ ] Download endpoint is protected
+[ ] User authentication is required
+[ ] Ownership/permission is verified
+[ ] Product ownership is verified
+[ ] Unauthorized user receives 403/404
+[ ] Download logs are stored
+[ ] Expired permissions are rejected
+[ ] Storage path is not publicly exposed
+[ ] No permanent unrestricted download URL
+[ ] Signed/temporary URL is used where applicable
+
+Verify:
+
+USER
+ ↓
+DOWNLOAD REQUEST
+ ↓
+AUTH
+ ↓
+PERMISSION
+ ↓
+PRODUCT
+ ↓
+STORAGE
+ ↓
+TEMPORARY DOWNLOAD
+
+===========================================================
+11. WISHLIST
+===========================================================
+
+[ ] Add wishlist item
+[ ] Remove wishlist item
+[ ] List wishlist
+[ ] Duplicate entries prevented
+[ ] User ownership enforced
+[ ] Product relation valid
+
+===========================================================
+12. REVIEWS
+===========================================================
+
+[ ] Create review
+[ ] Update review if supported
+[ ] Delete review if supported
+[ ] List product reviews
+[ ] Rating validation
+[ ] User ownership validation
+[ ] Duplicate review policy exists
+[ ] Review belongs to valid product
+[ ] Review authorization works
+
+===========================================================
+13. CMS
+===========================================================
+
+[ ] Pages exist
+[ ] Sections exist
+[ ] Page status works
+[ ] Draft pages cannot accidentally become public
+[ ] Page versions work
+[ ] CMS data is stored in database
+[ ] Public page endpoint works
+[ ] Admin/Owner editing is protected
+[ ] Unauthorized users cannot modify CMS
+[ ] Site settings work
+
+Verify:
+
+PAGE
+ ↓
+SECTION
+ ↓
+PAGE_VERSION
+
+===========================================================
+14. ANALYTICS
+===========================================================
+
+[ ] Analytics module exists
+[ ] Event creation works
+[ ] Events stored in database
+[ ] User association works where applicable
+[ ] Anonymous events handled safely
+[ ] Owner can view analytics
+[ ] Analytics endpoints are protected
+[ ] No sensitive personal data is unnecessarily logged
+
+===========================================================
+15. OWNER / ADMIN
+===========================================================
+
+[ ] Owner dashboard exists
+[ ] Admin dashboard exists if required
+[ ] Role-based access works
+[ ] Product management works
+[ ] Order management works
+[ ] User management works
+[ ] CMS management works
+[ ] Analytics access works
+[ ] Audit logs work
+[ ] Owner-only operations are actually Owner-only
+
+Test:
+
+CUSTOMER → 403
+ADMIN → allowed where intended
+OWNER → allowed
+
+===========================================================
+16. DATABASE / PRISMA
+===========================================================
+
+[ ] Prisma schema is syntactically valid
+[ ] prisma generate succeeds
+[ ] prisma db push/migrate succeeds
+[ ] All relations have valid opposite relation fields
+[ ] No orphaned relations
+[ ] Foreign keys are valid
+[ ] Unique constraints are correct
+[ ] Indexes exist where needed
+[ ] Cascading behavior is intentional
+[ ] Nullable fields are intentional
+[ ] Decimal/money handling is safe
+[ ] Date/time handling is consistent
+
+Verify every relation:
+
+User ↔ Session
+User ↔ Cart
+User ↔ Order
+User ↔ Wishlist
+User ↔ Review
+User ↔ DownloadPermission
+User ↔ AuditLog
+User ↔ AnalyticsEvent
+
+Author ↔ Product
+Category ↔ Product
+Product ↔ CartItem
+Product ↔ OrderItem
+Product ↔ Wishlist
+Product ↔ Review
+Product ↔ DownloadPermission
+Product ↔ Media
+Product ↔ DownloadLog
+
+Cart ↔ CartItem
+Order ↔ OrderItem
+Order ↔ Payment
+Page ↔ Section
+Page ↔ PageVersion
+
+===========================================================
+17. SEED DATA
+===========================================================
+
+[ ] prisma/seed.ts runs successfully
+[ ] Owner user created
+[ ] Admin user created
+[ ] Customer user created
+[ ] Categories created
+[ ] Authors created
+[ ] Products created
+[ ] CMS home page created
+[ ] Sections created
+[ ] Site settings created
+[ ] Email templates created
+[ ] Analytics seed works
+[ ] Seed is idempotent or safely resettable
+
+===========================================================
+18. STORAGE
+===========================================================
+
+[ ] Storage abstraction exists
+[ ] Local storage works
+[ ] S3 abstraction exists
+[ ] Provider selected through environment
+[ ] Files are not exposed unintentionally
+[ ] Product media works
+[ ] Digital book files work
+[ ] Download authorization works
+
+===========================================================
+19. EMAIL
+===========================================================
+
+[ ] Email abstraction exists
+[ ] Console/development provider works
+[ ] Production provider abstraction exists
+[ ] Order email can be triggered
+[ ] Authentication emails can be triggered if required
+[ ] Email templates exist
+[ ] Secrets are environment-based
+
+===========================================================
+20. SECURITY
+===========================================================
+
+[ ] HTTP-only cookies
+[ ] Secure cookie in production
+[ ] SameSite policy configured
+[ ] Password hashing
+[ ] No plaintext passwords
+[ ] No secrets committed
+[ ] Environment variables used
+[ ] Input validation
+[ ] Authorization checks
+[ ] Rate limiting
+[ ] Helmet
+[ ] CORS restricted
+[ ] SQL injection prevented by Prisma
+[ ] XSS risks reviewed
+[ ] IDOR vulnerabilities tested
+[ ] Unauthorized downloads tested
+[ ] Admin endpoints tested
+[ ] Owner endpoints tested
+[ ] Webhook security reviewed
+
+===========================================================
+21. API ↔ FRONTEND CONNECTION
+===========================================================
+
+For EVERY frontend API call:
+
+[ ] Endpoint exists
+[ ] HTTP method matches
+[ ] URL matches
+[ ] Request body matches DTO
+[ ] Response shape matches frontend expectation
+[ ] Authentication requirement matches
+[ ] Error handling exists
+[ ] Loading state exists
+[ ] Empty state exists
+
+Build a mapping table:
+
+FRONTEND COMPONENT
+        ↓
+API ENDPOINT
+        ↓
+CONTROLLER
+        ↓
+SERVICE
+        ↓
+PRISMA
+        ↓
+DATABASE
+
+If any link is missing → FAIL.
+
+===========================================================
+22. ENVIRONMENT VARIABLES
+===========================================================
+
+Check every environment variable used in code.
+
+For each:
+
+[ ] Declared in .env.example
+[ ] Correct name
+[ ] Correct usage
+[ ] Required/optional clearly defined
+[ ] No hardcoded secret
+[ ] Development fallback only where safe
+
+Detect:
+
+- env variables used but not declared
+- declared variables never used
+- misspelled variables
+- frontend/backend variable mismatch
+
+===========================================================
+23. DOCKER
+===========================================================
+
+[ ] docker-compose.yml valid
+[ ] PostgreSQL starts
+[ ] PostgreSQL healthcheck works
+[ ] Database credentials match DATABASE_URL
+[ ] API can connect to database
+[ ] Volumes work
+[ ] Ports are correct
+
+===========================================================
+24. TESTING
+===========================================================
+
+[ ] Unit tests exist
+[ ] E2E tests exist
+[ ] Auth tests
+[ ] Product tests
+[ ] Cart tests
+[ ] Order tests
+[ ] Payment tests
+[ ] Download authorization tests
+[ ] Role authorization tests
+[ ] CMS tests
+
+Minimum critical E2E:
+
+Register
+Login
+Get Me
+List Products
+Product Details
+Add Cart
+Checkout
+Payment Success
+Library Access
+Download Authorization
+Wishlist
+Review
+CMS Public Page
+Owner Authorization
+
+===========================================================
+25. BUILD VERIFICATION
+===========================================================
+
+Run:
+
+npm install
+
+npm run db:generate
+
+npm run typecheck
+
+npm run lint
+
+npm run build
+
+npm run test:e2e
+
+docker compose config
+
+docker compose up -d
+
+npm run db:push
+
+npm run db:seed
+
+npm run dev
+
+Every command must be checked.
+
+Do NOT say "works" unless command output confirms success.
+
+===========================================================
+26. DEAD CODE / BROKEN CODE AUDIT
+===========================================================
+
+Search for:
+
+TODO
+FIXME
+IMPLEMENT
+PLACEHOLDER
+throw new Error("Not implemented")
+return null
+return {}
+mock
+dummy
+fake
+temporary
+
+Determine whether each occurrence is acceptable.
+
+Critical feature placeholders = FAIL.
+
+===========================================================
+27. IMPORT / EXPORT AUDIT
+===========================================================
+
+[ ] Every imported module exists
+[ ] Every exported service is actually imported where needed
+[ ] No circular dependency causing runtime failure
+[ ] No incorrect relative paths
+[ ] No missing npm dependency
+[ ] No dependency installed only in wrong workspace
+[ ] No package used without declaration
+
+===========================================================
+28. DATABASE RELATION AUDIT
+===========================================================
+
+For every Prisma relation:
+
+1. Find both sides.
+2. Verify field names.
+3. Verify relation names.
+4. Verify foreign keys.
+5. Verify optionality.
+6. Verify delete behavior.
+
+Any Prisma relation error = FAIL.
+
+===========================================================
+29. BUSINESS LOGIC AUDIT
+===========================================================
+
+Verify:
+
+A user cannot:
+[ ] modify another user's cart
+[ ] access another user's orders
+[ ] access another user's library
+[ ] download unpaid books
+[ ] create fake payment success
+[ ] modify product price during checkout
+[ ] modify another user's review
+[ ] modify CMS without permission
+[ ] access owner functionality
+
+===========================================================
+30. FINAL RELEASE GATE
+===========================================================
+
+Aurelia Books v1.0 may ONLY be marked:
+
+████████████████████████████
+       RELEASE READY
+████████████████████████████
+
+IF:
+
+[ ] 0 CRITICAL FAILURES
+[ ] 0 broken Prisma relations
+[ ] 0 missing critical modules
+[ ] 0 missing critical API endpoints
+[ ] 0 broken frontend routes
+[ ] 0 broken frontend/API contracts
+[ ] 0 authentication bypasses
+[ ] 0 authorization bypasses
+[ ] 0 unauthorized downloads
+[ ] 0 payment → library logic errors
+[ ] typecheck PASS
+[ ] lint PASS
+[ ] build PASS
+[ ] database setup PASS
+[ ] seed PASS
+[ ] critical E2E tests PASS
+[ ] Docker configuration PASS
+
+Otherwise:
+
+STATUS = NOT RELEASE READY
+
+===========================================================
+FINAL REPORT FORMAT
+===========================================================
+
+Return:
+
+PROJECT STATUS:
+PASS / FAIL / NOT RELEASE READY
+
+TOTAL CHECKS:
+X
+
+PASSED:
+X
+
+FAILED:
+X
+
+WARNINGS:
+X
+
+NOT FOUND:
+X
+
+CRITICAL FAILURES:
+1.
+2.
+3.
+
+BROKEN CONNECTIONS:
+1.
+2.
+3.
+
+MISSING FILES:
+1.
+2.
+3.
+
+DATABASE ISSUES:
+1.
+2.
+3.
+
+API ↔ FRONTEND ISSUES:
+1.
+2.
+3.
+
+SECURITY ISSUES:
+1.
+2.
+3.
+
+TEST RESULTS:
+1.
+2.
+3.
+
+BUILD RESULTS:
+1.
+2.
+3.
+
+FINAL VERDICT:
+RELEASE READY
+OR
+NOT RELEASE READY
+
+IMPORTANT:
+Do NOT fix silently.
+
+For every problem provide:
+
+FILE:
+LINE:
+PROBLEM:
+WHY IT MATTERS:
+REQUIRED FIX:
+STATUS:
+```
+
+### 4. أهم Flow لازم الـ AI يفحصه
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant W as Next.js
+    participant A as NestJS API
+    participant DB as PostgreSQL
+    participant P as Payment
+    participant S as Storage
+    participant E as Email
+
+    U->>W: Login
+    W->>A: POST /auth/login
+    A->>DB: Verify User
+    DB-->>A: User
+    A-->>W: HTTP-only Session Cookie
+
+    U->>W: Browse Books
+    W->>A: GET /products
+    A->>DB: Query Products
+    DB-->>A: Products
+    A-->>W: Products
+
+    U->>W: Add Book to Cart
+    W->>A: POST /cart/items
+    A->>DB: Cart + CartItem
+    DB-->>A: Updated Cart
+    A-->>W: Cart
+
+    U->>W: Checkout
+    W->>A: POST /orders
+    A->>DB: Validate Cart + Product Prices
+    DB-->>A: Valid Cart
+    A->>P: Create Payment
+    P-->>A: Payment Result
+
+    alt Payment Success
+        A->>DB: Mark Order PAID
+        A->>DB: Create DownloadPermission
+        A->>DB: Add Library Access
+        A->>E: Send Purchase Email
+        A-->>W: Order Success
+    else Payment Failed
+        A->>DB: Keep Order Unpaid
+        A-->>W: Payment Failed
+    end
+
+    U->>W: Open Library
+    W->>A: GET /library
+    A->>DB: Verify Purchase
+    DB-->>A: Authorized Books
+    A-->>W: Library
+
+    U->>W: Download Book
+    W->>A: GET /downloads/:id
+    A->>DB: Verify Permission
+    DB-->>A: Permission Valid
+    A->>S: Request Protected File
+    S-->>A: Temporary URL
+    A-->>W: Secure Download
+```
+
+**النقطة المهمة:** الـ UML فوق مش مجرد رسم شكلي؛ خلي الـ AI يعتبره **Contract** للمشروع. أي سهم في الرسم لازم يقدر يثبت له من الكود أن الاتصال موجود فعلياً، وليس فقط أن أسماء الـ modules موجودة.
+
+إذا طلع مثلاً `DownloadsModule` موجود لكن ما في اتصال صحيح بين `Payment → DownloadPermission → Storage`، النتيجة لازم تكون **FAIL** وليس PASS.

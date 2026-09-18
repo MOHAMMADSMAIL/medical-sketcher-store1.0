@@ -1,0 +1,18 @@
+.container { width: 100%; }
+.container h1 { font-size: 28px; font-weight: 700; color: #536044; margin: 0 0 24px 0; }
+.toolbar { display: flex; gap: 12px; align-items: center; margin-bottom: 20px; }
+.select { padding: 10px 14px; border: 1px solid rgba(83,96,68,.2); border-radius: 8px; font-size: 14px; font-family: inherit; }
+.badge { display: inline-block; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; text-transform: uppercase; }
+.badge.draft { background: rgba(255,193,7,.2); color: #f57c00; }
+.badge.published { background: rgba(76,175,80,.2); color: #388e3c; }
+.errorBanner { background: rgba(220,53,69,.1); color: #dc3545; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; }
+.successBanner { background: rgba(76,175,80,.1); color: #388e3c; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; }
+.editor { background: rgba(255,255,255,.7); backdrop-filter: blur(10px); border: 1px solid rgba(83,96,68,.1); border-radius: 12px; padding: 20px; }
+.textarea { width: 100%; min-height: 360px; font-family: monospace; font-size: 13px; padding: 14px; border: 1px solid rgba(83,96,68,.2); border-radius: 8px; resize: vertical; }
+.editorActions { display: flex; gap: 12px; margin-top: 16px; }
+.saveButton, .publishButton { padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; }
+.saveButton { background: linear-gradient(135deg, #536044 0%, #3d4730 100%); color: #fff; }
+.saveButton:disabled { opacity: .6; cursor: not-allowed; }
+.publishButton { background: rgba(177,138,72,.15); color: #b18a48; }
+.publishButton:hover { background: rgba(177,138,72,.25); }
+.loading, .empty { text-align: center; padding: 40px; color: #999; font-size: 14px; }

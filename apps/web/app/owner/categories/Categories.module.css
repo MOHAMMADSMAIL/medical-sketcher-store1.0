@@ -1,0 +1,96 @@
+.container {
+  width: 100%;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #536044;
+  margin: 0;
+}
+
+.addButton {
+  background: linear-gradient(135deg, #536044 0%, #3d4730 100%);
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.form {
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.form input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid rgba(83, 96, 68, 0.2);
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.submitBtn {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #536044 0%, #3d4730 100%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.table {
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th {
+  background: rgba(83, 96, 68, 0.05);
+  padding: 16px;
+  text-align: left;
+  font-weight: 600;
+  color: #536044;
+  border-bottom: 1px solid rgba(83, 96, 68, 0.1);
+}
+
+.table td {
+  padding: 16px;
+  border-bottom: 1px solid rgba(83, 96, 68, 0.05);
+}
+
+.deleteBtn {
+  padding: 6px 12px;
+  background: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: #999;
+}

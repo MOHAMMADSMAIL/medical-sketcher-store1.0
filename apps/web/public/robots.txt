@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /owner/
+Disallow: /api/
+Disallow: /account/
+Disallow: /cart/
+Disallow: /checkout/
+Disallow: /library/
+Disallow: /orders/
+Disallow: /wishlist/
+Sitemap: https://medicalsketcherstore.com/sitemap.xml

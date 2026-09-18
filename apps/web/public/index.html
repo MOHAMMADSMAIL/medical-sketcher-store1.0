@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Aurelia Books — Read beautifully</title>
+  <meta name="description" content="A curated digital bookstore for curious minds." />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="grain"></div>
+  <header class="header"><a class="brand" href="#top"><span class="brand-mark">A</span><span>Aurelia <em>Books</em></span></a><nav><a href="#catalog">Catalog</a><a href="#about">About</a></nav><button class="cart-button" id="cartButton">Bag <span id="cartCount">0</span></button></header>
+  <main id="top">
+    <section class="hero"><div class="hero-copy"><p class="eyebrow">A considered collection · مكتبة منتقاة</p><h1>Books for the<br/><i>beautifully curious.</i></h1><p class="hero-text">Digital editions chosen for quiet mornings, long journeys, and the questions that stay with you.</p><a class="primary" href="#catalog">Explore the collection <span>↘</span></a></div><div class="hero-art"><div class="sun"></div><div class="book-stack"><div class="book book-1">THE<br/>CREATIVE<br/>ACT</div><div class="book book-2">THE<br/>MIDNIGHT<br/>LIBRARY</div><div class="book book-3">ATOMIC<br/>HABITS</div></div><div class="art-caption">VOL. 01 / 2026</div></div></section>
+    <section class="marquee"><span>READ SLOWLY</span><span>THINK DEEPLY</span><span>LIVE CURIOUSLY</span><span>READ SLOWLY</span></section>
+    <section class="section" id="catalog"><div class="section-head"><div><p class="eyebrow">The collection</p><h2>Find your next<br/><i>favorite chapter.</i></h2></div><div class="filters" id="filters"></div></div><div class="grid" id="products"><div class="loading">Curating the shelves…</div></div></section>
+    <section class="about" id="about"><p class="eyebrow">Our philosophy</p><h2>A small bookstore<br/>with a <i>wide horizon.</i></h2><p>We believe the right book can change the texture of a day. Aurelia is a digital-first bookstore for stories, ideas, and voices worth making room for.</p></section>
+  </main>
+  <aside class="drawer" id="drawer"><div class="drawer-head"><h2>Your bag</h2><button id="closeCart">×</button></div><div id="cartLines"></div><div class="drawer-foot"><div class="total"><span>Total</span><strong id="cartTotal">$0.00</strong></div><button class="primary full" id="checkout">Continue to checkout <span>→</span></button><p class="fine">Demo checkout only — no live charge is made.</p></div></aside><div class="overlay" id="overlay"></div><div class="toast" id="toast"></div>
+  <script src="/app.js"></script>
+</body></html>

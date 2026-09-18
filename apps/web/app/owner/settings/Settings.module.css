@@ -1,0 +1,15 @@
+.container { width: 100%; }
+.container h1 { font-size: 28px; font-weight: 700; color: #536044; margin: 0 0 24px 0; }
+.errorBanner { background: rgba(220,53,69,.1); color: #dc3545; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; }
+.successBanner { background: rgba(76,175,80,.1); color: #388e3c; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; }
+.panel { background: rgba(255,255,255,.7); backdrop-filter: blur(10px); border: 1px solid rgba(83,96,68,.1); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.row { display: flex; align-items: center; gap: 14px; }
+.key { width: 200px; font-weight: 600; color: #536044; font-size: 14px; }
+.value { flex: 1; padding: 10px 14px; border: 1px solid rgba(83,96,68,.2); border-radius: 8px; font-size: 14px; font-family: inherit; }
+.addRow { display: flex; gap: 12px; padding-top: 10px; border-top: 1px dashed rgba(83,96,68,.15); }
+.keyInput { width: 200px; padding: 10px 14px; border: 1px solid rgba(83,96,68,.2); border-radius: 8px; font-size: 14px; font-family: inherit; }
+.addBtn { padding: 10px 18px; border: none; border-radius: 8px; background: rgba(177,138,72,.15); color: #b18a48; font-weight: 600; cursor: pointer; }
+.addBtn:hover { background: rgba(177,138,72,.25); }
+.saveButton { align-self: flex-start; margin-top: 6px; padding: 12px 24px; border: none; border-radius: 8px; background: linear-gradient(135deg, #536044 0%, #3d4730 100%); color: #fff; font-weight: 600; font-size: 14px; cursor: pointer; }
+.saveButton:disabled { opacity: .6; cursor: not-allowed; }
+.loading, .empty { text-align: center; padding: 40px; color: #999; font-size: 14px; }

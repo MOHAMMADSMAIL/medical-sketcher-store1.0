@@ -1,0 +1,339 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  ADMIN
+  OWNER
+}
+
+enum ProductStatus {
+  DRAFT
+  PUBLISHED
+  COMING_SOON
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  FULFILLED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  CREATED
+  SUCCEEDED
+  FAILED
+}
+
+enum LearningType {
+  READING
+  WRITING
+  LISTENING
+  SPEAKING
+}
+
+enum ContentVisibility {
+  PUBLIC
+  AUTHENTICATED
+  OWNER_ONLY
+}
+
+model User {
+  id              String               @id @default(cuid())
+  email           String               @unique
+  name            String?
+  passwordHash    String
+  role            Role                 @default(CUSTOMER)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  sessions        Session[]
+  cart            Cart?
+  orders          Order[]
+  wishlist        WishlistItem[]
+  reviews         Review[]
+  permissions     DownloadPermission[]
+  auditLogs       AuditLog[]
+  analyticsEvents AnalyticsEvent[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Author {
+  id       String    @id @default(cuid())
+  name     String
+  slug     String    @unique
+  bio      String?
+  products Product[]
+}
+
+model Category {
+  id       String    @id @default(cuid())
+  name     String
+  slug     String    @unique
+  products Product[]
+}
+
+model Product {
+  id          String               @id @default(cuid())
+  title       String
+  slug        String               @unique
+  description String
+  price       Decimal              
+  currency    String               @default("USD")
+  status      ProductStatus        @default(DRAFT)
+  authorId    String
+  categoryId  String
+  author      Author               @relation(fields: [authorId], references: [id])
+  category    Category             @relation(fields: [categoryId], references: [id])
+  cartItems   CartItem[]
+  orderItems  OrderItem[]
+  wishlist    WishlistItem[]
+  reviews     Review[]
+  permissions DownloadPermission[]
+  media       Media[]
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+}
+
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String     @unique
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model CartItem {
+  id        String  @id @default(cuid())
+  cartId    String
+  productId String
+  quantity  Int     @default(1)
+  cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@unique([cartId, productId])
+}
+
+model Order {
+  id          String               @id @default(cuid())
+  userId      String
+  total       Decimal              
+  currency    String               @default("USD")
+  status      OrderStatus          @default(PENDING)
+  user        User                 @relation(fields: [userId], references: [id])
+  items       OrderItem[]
+  payments    Payment[]
+  permissions DownloadPermission[]
+  createdAt   DateTime             @default(now())
+  paidAt      DateTime?
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  productId String
+  price     Decimal 
+  quantity  Int
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+model Payment {
+  id             String        @id @default(cuid())
+  orderId        String
+  amount         Decimal       
+  provider       String
+  status         PaymentStatus @default(CREATED)
+  transactionId  String?       @unique
+  idempotencyKey String        @unique
+  order          Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  createdAt      DateTime      @default(now())
+}
+
+model DownloadPermission {
+  id        String        @id @default(cuid())
+  userId    String
+  productId String
+  orderId   String?
+  expiresAt DateTime?
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product       @relation(fields: [productId], references: [id])
+  order     Order?        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  logs      DownloadLog[]
+
+  @@unique([userId, productId])
+}
+
+model DownloadLog {
+  id           String             @id @default(cuid())
+  permissionId String
+  userId       String
+  productId    String
+  status       String
+  createdAt    DateTime           @default(now())
+  permission   DownloadPermission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+}
+
+model WishlistItem {
+  id        String  @id @default(cuid())
+  userId    String
+  productId String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+}
+
+model Review {
+  id               String   @id @default(cuid())
+  userId           String
+  productId        String
+  rating           Int
+  body             String
+  approved         Boolean  @default(false)
+  archived         Boolean  @default(false)
+  rejectionReason  String?
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product          Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt        DateTime @default(now())
+
+  @@unique([userId, productId])
+}
+
+model Media {
+  id           String   @id @default(cuid())
+  productId    String?
+  storageKey   String
+  mimeType     String
+  size         Int
+  type         String?
+  originalName String?
+  product      Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+  learningContent LearningContent[]
+  createdAt    DateTime   @default(now())
+}
+
+model LearningContent {
+  id           String            @id @default(cuid())
+  type         LearningType
+  title        String
+  slug         String            @unique
+  description  String?
+  body         Json?
+  metadata     Json?
+  mediaId      String?
+  duration     Int?
+  visibility   ContentVisibility @default(OWNER_ONLY)
+  status       ProductStatus    @default(DRAFT)
+  order        Int               @default(0)
+  archivedAt   DateTime?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  media        Media?            @relation(fields: [mediaId], references: [id], onDelete: SetNull)
+
+  @@index([type, status, visibility])
+  @@index([createdAt])
+}
+
+model Lesson {
+  id        String   @id @default(cuid())
+  title     String
+  slug      String   @unique
+  content   Json?
+  order     Int      @default(0)
+  status    String   @default("DRAFT")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Assessment {
+  id         String   @id @default(cuid())
+  title      String
+  slug       String   @unique
+  questions  Json?
+  passScore  Int      @default(70)
+  status     String   @default("DRAFT")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Page {
+  id       String        @id @default(cuid())
+  slug     String        @unique
+  title    String
+  status   String        @default("DRAFT")
+  sections Section[]
+  versions PageVersion[]
+}
+
+model Section {
+  id      String @id @default(cuid())
+  pageId  String
+  type    String
+  content Json
+  page    Page   @relation(fields: [pageId], references: [id], onDelete: Cascade)
+}
+
+model PageVersion {
+  id      String @id @default(cuid())
+  pageId  String
+  version Int
+  content Json
+  page    Page   @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@unique([pageId, version])
+}
+
+model SiteSettings {
+  id    String @id @default(cuid())
+  key   String @unique
+  value Json
+}
+
+model EmailTemplate {
+  id      String @id @default(cuid())
+  key     String @unique
+  subject String
+  body    String
+}
+
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  entity    String
+  entityId  String?
+  metadata  Json?
+  user      User?    @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  userId    String?
+  name      String
+  path      String?
+  metadata  Json?
+  user      User?    @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+}

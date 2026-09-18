@@ -1,0 +1,15 @@
+.container { width: 100%; }
+.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+.header h1 { font-size: 28px; font-weight: 700; color: #536044; margin: 0; }
+.uploadButton { background: linear-gradient(135deg, #536044 0%, #3d4730 100%); color: #fff; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; display: inline-block; }
+.hiddenInput { display: none; }
+.errorBanner { background: rgba(220,53,69,.1); color: #dc3545; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+.card { background: rgba(255,255,255,.7); backdrop-filter: blur(10px); border: 1px solid rgba(83,96,68,.1); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.thumb { font-size: 40px; text-align: center; }
+.meta { flex: 1; }
+.name { font-weight: 600; color: #536044; margin: 0 0 4px 0; font-size: 13px; word-break: break-all; }
+.sub { font-size: 12px; color: #999; margin: 0; }
+.deleteBtn { padding: 6px 12px; border: none; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; background: rgba(220,53,69,.1); color: #dc3545; }
+.deleteBtn:hover { background: rgba(220,53,69,.2); }
+.loading, .empty { text-align: center; padding: 40px; color: #999; font-size: 14px; }

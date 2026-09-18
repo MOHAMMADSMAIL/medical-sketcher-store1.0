@@ -1,0 +1,6 @@
+import { Body, Controller, Get, Param, Post, Req, UseGuards, BadRequestException, NotFoundException } from '@nestjs/common';
+import type { Request } from 'express';
+import { PrismaService } from './prisma.service';
+import { AuthGuard } from './auth.guard';
+@Controller('products/:productId/reviews')
+export class ReviewsController { constructor(private readonly prisma: PrismaService) {} @Get() list(@Param('productId') productId: string) { return this.prisma.review.findMany({ where: { productId, approved: true }, include: { user: { select: { name: true } } }, orderBy: { createdAt: 'desc' } }); } @Post() @UseGuards(AuthGuard) async create(@Req() req: Request & { user: { id: string } }, @Param('productId') productId: string, @Body() body: { rating: number; body: string }) { if (!Number.isInteger(body.rating) || body.rating < 1 || body.rating > 5 || !body.body?.trim()) throw new BadRequestException('Invalid review'); const product = await this.prisma.product.findUnique({ where: { id: productId } }); if (!product) throw new NotFoundException('Product not found'); return this.prisma.review.create({ data: { userId: req.user.id, productId, rating: body.rating, body: body.body.trim(), approved: true } }); } }

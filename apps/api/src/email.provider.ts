@@ -1,0 +1,3 @@
+export interface EmailProvider { send(input: { to: string; template: string; variables?: Record<string, string> }): Promise<void>; }
+export class ConsoleEmailProvider implements EmailProvider { async send(input: { to: string; template: string; variables?: Record<string, string> }) { console.info(`[email:console] ${input.template} -> ${input.to}`, input.variables || {}); } }
+export class RealEmailProvider implements EmailProvider { async send(_input: { to: string; template: string; variables?: Record<string, string> }) { throw new Error('Configure a production email adapter before selecting it'); } }

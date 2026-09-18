@@ -1,0 +1,18 @@
+.container { width: 100%; }
+.container h1 { font-size: 28px; font-weight: 700; color: #536044; margin: 0 0 24px 0; }
+.errorBanner { background: rgba(220,53,69,.1); color: #dc3545; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; }
+.grantForm { display: flex; gap: 12px; flex-wrap: wrap; background: rgba(255,255,255,.7); border: 1px solid rgba(83,96,68,.1); border-radius: 12px; padding: 16px; margin-bottom: 20px; }
+.select { flex: 1; min-width: 180px; padding: 10px 14px; border: 1px solid rgba(83,96,68,.2); border-radius: 8px; font-size: 14px; font-family: inherit; }
+.grantBtn { background: linear-gradient(135deg, #536044 0%, #3d4730 100%); color: #fff; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; }
+.grantBtn:disabled { opacity: .5; cursor: not-allowed; }
+.table { background: rgba(255,255,255,.7); backdrop-filter: blur(10px); border: 1px solid rgba(83,96,68,.1); border-radius: 12px; overflow: hidden; }
+.table table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.table th { background: rgba(83,96,68,.05); padding: 16px; text-align: left; font-weight: 600; color: #536044; border-bottom: 1px solid rgba(83,96,68,.1); }
+.table td { padding: 16px; border-bottom: 1px solid rgba(83,96,68,.05); color: #333; }
+.actions { display: flex; gap: 8px; }
+.extendBtn, .revokeBtn { padding: 6px 12px; border: none; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; }
+.extendBtn { background: rgba(33,150,243,.1); color: #1976d2; }
+.extendBtn:hover { background: rgba(33,150,243,.2); }
+.revokeBtn { background: rgba(220,53,69,.1); color: #dc3545; }
+.revokeBtn:hover { background: rgba(220,53,69,.2); }
+.loading, .empty { text-align: center; padding: 40px; color: #999; font-size: 14px; }
