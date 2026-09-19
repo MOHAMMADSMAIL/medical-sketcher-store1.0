@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
 import * as path from 'path';
-import { LocalStorageProvider, safeStorageKey } from './storage.provider';
+import { storageProvider, safeStorageKey } from './storage.provider';
 
 @Injectable()
 export class OwnerService {
-  private readonly storage = new LocalStorageProvider();
+  private readonly storage = storageProvider;
   constructor(private prisma: PrismaService) {}
 
   async getDashboardStats() {
@@ -126,7 +126,7 @@ export class OwnerService {
     const extension = path.extname(file.originalname).toLowerCase().replace(/[^a-z0-9.]/g, '');
     const fileName = `${fileType}-${Date.now()}${extension}`;
     const storageKey = safeStorageKey(`${bookId}/${fileName}`);
-    await this.storage.put(storageKey, file.buffer);
+    await this.storage.put(storageKey, file.buffer, file.mimetype);
 
     const media = await this.prisma.media.create({
       data: {
@@ -134,6 +134,8 @@ export class OwnerService {
         storageKey,
         mimeType: file.mimetype,
         size: file.size,
+        originalName: file.originalname,
+        isPrimary: fileType === 'book',
       },
     });
 
@@ -410,7 +412,7 @@ export class OwnerService {
     const originalName = file.originalname.normalize('NFKC').replace(/[^a-zA-Z0-9._-]+/g, '-');
     const fileName = `${Date.now()}-${originalName || 'upload'}`;
     const storageKey = safeStorageKey(`media/${fileName}`);
-    await this.storage.put(storageKey, file.buffer);
+    await this.storage.put(storageKey, file.buffer, file.mimetype);
 
     const media = await this.prisma.media.create({
       data: {
