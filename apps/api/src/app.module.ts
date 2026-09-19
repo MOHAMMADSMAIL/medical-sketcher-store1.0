@@ -21,9 +21,15 @@ import { RolesGuard } from './roles.guard';
 import { OwnerController } from './owner.controller';
 import { OwnerService } from './owner.service';
 import { LearningContentController } from './learning-content.controller';
+import { DownloadService } from './download.service';
+import { DownloadController } from './download.controller';
 
 @Module({ providers: [PrismaService], exports: [PrismaService] })
 export class DatabaseModule {}
 
-@Module({ imports: [DatabaseModule], controllers: [ProductsController, AuthController, CartController, OrdersController, PaymentController, LibraryController, WishlistController, ReviewsController, CmsController, ObservabilityController, OwnerController, LearningContentController], providers: [ProductsService, AuthService, AuthGuard, CartService, OrdersService, PaymentService, LibraryService, RolesGuard, OwnerService] })
+@Module({
+  imports: [DatabaseModule],
+  controllers: [ProductsController, AuthController, CartController, OrdersController, PaymentController, LibraryController, WishlistController, ReviewsController, CmsController, ObservabilityController, OwnerController, LearningContentController, DownloadController],
+  providers: [ProductsService, AuthService, AuthGuard, CartService, OrdersService, PaymentService, LibraryService, RolesGuard, OwnerService, DownloadService],
+})
 export class AppModule {}

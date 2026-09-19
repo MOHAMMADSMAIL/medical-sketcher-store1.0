@@ -17,6 +17,7 @@ enum ProductStatus {
   DRAFT
   PUBLISHED
   COMING_SOON
+  ARCHIVED
 }
 
 enum OrderStatus {
@@ -105,6 +106,7 @@ model Product {
   price       Decimal              
   currency    String               @default("USD")
   status      ProductStatus        @default(DRAFT)
+  archivedAt  DateTime?
   authorId    String
   categoryId  String
   author      Author               @relation(fields: [authorId], references: [id])
@@ -185,6 +187,9 @@ model DownloadPermission {
   productId String
   orderId   String?
   expiresAt DateTime?
+  revokedAt DateTime?
+  maxDownloads Int?
+  downloadCount Int       @default(0)
   user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   product   Product       @relation(fields: [productId], references: [id])
   order     Order?        @relation(fields: [orderId], references: [id], onDelete: Cascade)
@@ -199,6 +204,8 @@ model DownloadLog {
   userId       String
   productId    String
   status       String
+  ip           String?
+  userAgent    String?
   createdAt    DateTime           @default(now())
   permission   DownloadPermission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 }

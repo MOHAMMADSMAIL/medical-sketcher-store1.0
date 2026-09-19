@@ -117,6 +117,20 @@ export class OwnerService {
     });
   }
 
+  async archiveBook(id: string) {
+    return this.prisma.product.update({
+      where: { id },
+      data: { status: 'ARCHIVED', archivedAt: new Date() },
+    });
+  }
+
+  async restoreBook(id: string) {
+    return this.prisma.product.update({
+      where: { id },
+      data: { status: 'DRAFT', archivedAt: null },
+    });
+  }
+
   async deleteBook(id: string) {
     return this.prisma.product.delete({ where: { id } });
   }

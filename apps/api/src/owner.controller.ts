@@ -10,6 +10,7 @@ import {
   Post,
   Put,
   Query,
+  Req,
   UseGuards,
   UseInterceptors,
   UploadedFile,
@@ -19,6 +20,8 @@ import { PrismaService } from './prisma.service';
 import { AuthGuard } from './auth.guard';
 import { Roles, RolesGuard } from './roles.guard';
 import { OwnerService } from './owner.service';
+import { CreateAssessmentDto, CreateAuthorDto, CreateBookDto, CreateCategoryDto, CreateLessonDto, CreatePageDto, SettingDto, UpdateAssessmentDto, UpdateAuthorDto, UpdateBookDto, UpdateCategoryDto, UpdateLessonDto, UpdatePageDto, UpdateReviewDto, UpdateUserDto } from './owner.dto';
+import type { Request } from 'express';
 
 @Controller('owner')
 @UseGuards(AuthGuard, RolesGuard)
@@ -36,10 +39,10 @@ export class OwnerController {
   book(@Param('id') id: string) { return this.owner.getBook(id); }
 
   @Post('books')
-  createBook(@Body() body: Record<string, any>) { return this.owner.createBook(body); }
+  createBook(@Body() body: CreateBookDto) { return this.owner.createBook(body); }
 
   @Put('books/:id')
-  updateBook(@Param('id') id: string, @Body() body: Record<string, any>) { return this.owner.updateBook(id, body); }
+  updateBook(@Param('id') id: string, @Body() body: UpdateBookDto) { return this.owner.updateBook(id, body); }
 
   @Post('books/:id/publish')
   publishBook(@Param('id') id: string) { return this.owner.publishBook(id); }
@@ -48,7 +51,11 @@ export class OwnerController {
   unpublishBook(@Param('id') id: string) { return this.owner.unpublishBook(id); }
 
   @Post('books/:id/archive')
-  archiveBook(@Param('id') id: string) { return this.owner.unpublishBook(id); }
+  async archiveBook(@Req() req: Request & { user: { id: string } }, @Param('id') id: string) {
+    const archived = await this.owner.archiveBook(id);
+    await this.owner.createAuditLog(req.user.id, 'archive', 'Product', id, { title: archived.title, previousStatus: archived.status === 'ARCHIVED' ? 'PUBLISHED' : 'DRAFT' });
+    return archived;
+  }
 
   @Post('books/:id/upload')
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 100 * 1024 * 1024 }, fileFilter: (_req, file, cb) => cb(null, /^(application|audio|image|text)\//.test(file.mimetype)) }))
@@ -73,36 +80,36 @@ export class OwnerController {
   @Get('authors')
   authors(@Query('page') page = '1', @Query('limit') limit = '20', @Query('search') search?: string) { return this.owner.getAuthors(Number(page), Number(limit), search); }
   @Post('authors')
-  createAuthor(@Body() body: Record<string, any>) { return this.owner.createAuthor(body); }
+  createAuthor(@Body() body: CreateAuthorDto) { return this.owner.createAuthor(body); }
   @Put('authors/:id')
-  updateAuthor(@Param('id') id: string, @Body() body: Record<string, any>) { return this.owner.updateAuthor(id, body); }
+  updateAuthor(@Param('id') id: string, @Body() body: UpdateAuthorDto) { return this.owner.updateAuthor(id, body); }
   @Delete('authors/:id')
   deleteAuthor(@Param('id') id: string) { return this.owner.deleteAuthor(id); }
 
   @Get('categories')
   categories(@Query('page') page = '1', @Query('limit') limit = '20', @Query('search') search?: string) { return this.owner.getCategories(Number(page), Number(limit), search); }
   @Post('categories')
-  createCategory(@Body() body: Record<string, any>) { return this.owner.createCategory(body); }
+  createCategory(@Body() body: CreateCategoryDto) { return this.owner.createCategory(body); }
   @Put('categories/:id')
-  updateCategory(@Param('id') id: string, @Body() body: Record<string, any>) { return this.owner.updateCategory(id, body); }
+  updateCategory(@Param('id') id: string, @Body() body: UpdateCategoryDto) { return this.owner.updateCategory(id, body); }
   @Delete('categories/:id')
   deleteCategory(@Param('id') id: string) { return this.owner.deleteCategory(id); }
 
   @Get('lessons')
   lessons(@Query('page') page = '1', @Query('limit') limit = '20') { return this.owner.getLessons(Number(page), Number(limit)); }
   @Post('lessons')
-  createLesson(@Body() body: Record<string, any>) { return this.owner.createLesson(body); }
+  createLesson(@Body() body: CreateLessonDto) { return this.owner.createLesson(body); }
   @Put('lessons/:id')
-  updateLesson(@Param('id') id: string, @Body() body: Record<string, any>) { return this.owner.updateLesson(id, body); }
+  updateLesson(@Param('id') id: string, @Body() body: UpdateLessonDto) { return this.owner.updateLesson(id, body); }
   @Post('lessons/:id/publish')
   publishLesson(@Param('id') id: string) { return this.owner.publishLesson(id); }
 
   @Get('assessments')
   assessments(@Query('page') page = '1', @Query('limit') limit = '20') { return this.owner.getAssessments(Number(page), Number(limit)); }
   @Post('assessments')
-  createAssessment(@Body() body: Record<string, any>) { return this.owner.createAssessment(body); }
+  createAssessment(@Body() body: CreateAssessmentDto) { return this.owner.createAssessment(body); }
   @Put('assessments/:id')
-  updateAssessment(@Param('id') id: string, @Body() body: Record<string, any>) { return this.owner.updateAssessment(id, body); }
+  updateAssessment(@Param('id') id: string, @Body() body: UpdateAssessmentDto) { return this.owner.updateAssessment(id, body); }
   @Post('assessments/:id/publish')
   publishAssessment(@Param('id') id: string) { return this.owner.publishAssessment(id); }
 
@@ -127,10 +134,14 @@ export class OwnerController {
   }
 
   @Patch('users/:id')
-  updateUser(@Param('id') id: string, @Body() body: { role?: string }) {
+  async updateUser(@Req() req: Request & { user: { id: string } }, @Param('id') id: string, @Body() body: UpdateUserDto) {
     const allowed = ['CUSTOMER', 'ADMIN', 'OWNER'];
     if (body.role && !allowed.includes(body.role)) throw new BadRequestException('Invalid role');
-    return this.prisma.user.update({ where: { id }, data: body.role ? { role: body.role as any } : {}, select: { id: true, email: true, name: true, role: true } });
+    const previous = await this.prisma.user.findUnique({ where: { id }, select: { role: true } });
+    if (!previous) throw new NotFoundException('User not found');
+    const updated = await this.prisma.user.update({ where: { id }, data: body.role ? { role: body.role as any } : {}, select: { id: true, email: true, name: true, role: true } });
+    if (body.role && previous.role !== updated.role) await this.owner.createAuditLog(req.user.id, 'role-change', 'User', id, { from: previous.role, to: updated.role });
+    return updated;
   }
 
   @Get('dashboard')
@@ -163,7 +174,7 @@ export class OwnerController {
   }
 
   @Post('products')
-  async createProduct(@Body() body: Record<string, any>) {
+  async createProduct(@Req() req: Request & { user: { id: string } }, @Body() body: CreateBookDto) {
     const authorId = body.authorId || (await this.prisma.author.findFirst())?.id;
     const categoryId = body.categoryId || (await this.prisma.category.findFirst())?.id;
     if (!authorId || !categoryId) throw new NotFoundException('Create an author and category first');
@@ -180,16 +191,19 @@ export class OwnerController {
       },
       include: { author: true, category: true },
     });
+    await this.owner.createAuditLog(req.user.id, 'create', 'Product', product.id, { title: product.title, price: product.price, status: product.status });
     return product;
   }
 
   @Patch('products/:id')
-  async updateProduct(@Param('id') id: string, @Body() body: Record<string, any>) {
+  async updateProduct(@Req() req: Request & { user: { id: string } }, @Param('id') id: string, @Body() body: UpdateBookDto) {
     const existing = await this.prisma.product.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException('Product not found');
     const allowed = ['title', 'slug', 'description', 'price', 'currency', 'status', 'authorId', 'categoryId'];
     const data = Object.fromEntries(Object.entries(body).filter(([key, value]) => allowed.includes(key) && value !== undefined));
-    return this.prisma.product.update({ where: { id }, data: data as any, include: { author: true, category: true } });
+    const updated = await this.prisma.product.update({ where: { id }, data: data as any, include: { author: true, category: true } });
+    await this.owner.createAuditLog(req.user.id, 'update', 'Product', id, { before: { title: existing.title, price: existing.price, status: existing.status }, after: { title: updated.title, price: updated.price, status: updated.status } });
+    return updated;
   }
 
   @Delete('products/:id')
@@ -203,8 +217,10 @@ export class OwnerController {
   }
 
   @Patch('reviews/:id')
-  review(@Param('id') id: string, @Body() body: { approved?: boolean }) {
-    return this.prisma.review.update({ where: { id }, data: { approved: Boolean(body.approved) }, include: { user: true, product: true } });
+  async review(@Req() req: Request & { user: { id: string } }, @Param('id') id: string, @Body() body: UpdateReviewDto) {
+    const updated = await this.prisma.review.update({ where: { id }, data: { approved: Boolean(body.approved) }, include: { user: true, product: true } });
+    await this.owner.createAuditLog(req.user.id, Boolean(body.approved) ? 'approve' : 'reject', 'Review', id, { productId: updated.productId, userId: updated.userId });
+    return updated;
   }
 
   @Get('pages')
@@ -213,25 +229,30 @@ export class OwnerController {
   }
 
   @Post('pages')
-  async createPage(@Body() body: Record<string, any>) {
+  async createPage(@Req() req: Request & { user: { id: string } }, @Body() body: CreatePageDto) {
     return this.prisma.page.create({ data: { slug: String(body.slug), title: String(body.title), status: String(body.status || 'DRAFT'), sections: { create: Array.isArray(body.sections) ? body.sections.map((section: any) => ({ type: String(section.type || 'content'), content: section.content || {} })) : [] } }, include: { sections: true } });
   }
 
   @Patch('pages/:id')
-  async updatePage(@Param('id') id: string, @Body() body: Record<string, any>) {
+  async updatePage(@Req() req: Request & { user: { id: string } }, @Param('id') id: string, @Body() body: UpdatePageDto) {
     const page = await this.prisma.page.findUnique({ where: { id }, include: { versions: true } });
     if (!page) throw new NotFoundException('Page not found');
     const nextVersion = page.versions.reduce((max, version) => Math.max(max, version.version), 0) + 1;
-    const content = body.content || { sections: body.sections || [] };
-    return this.prisma.$transaction(async (tx) => {
-      const updated = await tx.page.update({ where: { id }, data: { title: body.title ?? page.title, slug: body.slug ?? page.slug, status: body.status ?? page.status } });
+    const title = body.title ?? page.title;
+    const slug = body.slug ?? page.slug;
+    const status = body.status ?? page.status;
+    const content = (body.content || { sections: body.sections || [] }) as any;
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.page.update({ where: { id }, data: { title, slug, status } });
       await tx.pageVersion.create({ data: { pageId: id, version: nextVersion, content } });
       if (Array.isArray(body.sections)) {
         await tx.section.deleteMany({ where: { pageId: id } });
-        await tx.section.createMany({ data: body.sections.map((section: any) => ({ pageId: id, type: String(section.type || 'content'), content: section.content || {} })) });
+        await tx.section.createMany({ data: body.sections.map((section: any) => ({ pageId: id, type: String(section.type || 'content'), content: section.content ?? {} })) });
       }
       return updated;
     });
+    await this.owner.createAuditLog(req.user.id, 'update', 'Page', id, { title: updated.title, slug: updated.slug });
+    return updated;
   }
 
   @Post('pages/:id/publish')
@@ -243,8 +264,8 @@ export class OwnerController {
   settings() { return this.prisma.siteSettings.findMany({ orderBy: { key: 'asc' } }); }
 
   @Put('settings/:key')
-  setting(@Param('key') key: string, @Body() body: { value: any }) {
-    return this.prisma.siteSettings.upsert({ where: { key }, update: { value: body.value }, create: { key, value: body.value } });
+  setting(@Param('key') key: string, @Body() body: SettingDto) {
+    return this.prisma.siteSettings.upsert({ where: { key }, update: { value: body.value as any }, create: { key, value: body.value as any } });
   }
 
   @Get('audit')
