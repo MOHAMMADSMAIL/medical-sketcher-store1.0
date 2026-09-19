@@ -24,6 +24,7 @@ export default function BooksPage() {
   const [page, setPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (!isOwner) return;
@@ -46,6 +47,17 @@ export default function BooksPage() {
     const timer = setTimeout(fetchBooks, 300);
     return () => clearTimeout(timer);
   }, [isOwner, page, searchTerm, statusFilter]);
+
+  const handleDelete = async (book: Book) => {
+    if (!confirm(`Delete "${book.title}"? This cannot be undone.`)) return;
+    try {
+      setError('');
+      await ownerAPI.deleteBook(book.id);
+      setBooks((current) => current.filter((item) => item.id !== book.id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Delete failed');
+    }
+  };
 
   if (authLoading) return <div>Loading...</div>;
   if (!isOwner) return <div>Unauthorized</div>;
@@ -80,6 +92,7 @@ export default function BooksPage() {
           </select>
         </div>
 
+        {error && <div className={styles.empty}>{error}</div>}
         {loading ? (
           <div className={styles.loading}>Loading books...</div>
         ) : books.length === 0 ? (
@@ -116,7 +129,7 @@ export default function BooksPage() {
                         <Link href={`/owner/books/${book.id}`} className={styles.editBtn}>
                           Edit
                         </Link>
-                        <button className={styles.deleteBtn}>Delete</button>
+                        <button className={styles.deleteBtn} onClick={() => void handleDelete(book)}>Delete</button>
                       </div>
                     </td>
                   </tr>
