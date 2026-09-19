@@ -39,7 +39,11 @@ export class PaymentService {
       const payment = await tx.payment.update({ where: { id: paymentId }, data: { status: result.status, transactionId: result.transactionId, resultCode: result.resultCode, resultDescription: result.resultDescription, paidAt: result.status === 'SUCCEEDED' ? new Date() : undefined }, include: { order: { include: { items: true } } } });
       if (result.status === 'SUCCEEDED') {
         await tx.order.update({ where: { id: payment.orderId }, data: { status: 'PAID', paidAt: new Date() } });
-        for (const item of payment.order.items) await tx.downloadPermission.upsert({ where: { userId_productId: { userId: payment.order.userId, productId: item.productId } }, update: { orderId: payment.orderId }, create: { userId: payment.order.userId, productId: item.productId, orderId: payment.orderId } });
+        // Store policy (owner decision): 1-year access window and capped downloads per book.
+        const accessDays = Number(process.env.DOWNLOAD_ACCESS_DAYS || 365);
+        const maxDownloads = Number(process.env.DOWNLOAD_MAX_COUNT || 5);
+        const expiresAt = new Date(Date.now() + accessDays * 86400000);
+        for (const item of payment.order.items) await tx.downloadPermission.upsert({ where: { userId_productId: { userId: payment.order.userId, productId: item.productId } }, update: { orderId: payment.orderId, expiresAt, maxDownloads }, create: { userId: payment.order.userId, productId: item.productId, orderId: payment.orderId, expiresAt, maxDownloads } });
       } else await tx.order.update({ where: { id: payment.orderId }, data: { status: 'PENDING' } });
       return payment;
     });
