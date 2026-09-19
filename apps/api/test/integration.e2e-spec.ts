@@ -4,6 +4,7 @@ import { createServer, type Server } from 'node:http';
 import { rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { PrismaClient } from '@prisma/client';
 
 jest.setTimeout(180000);
 
@@ -28,6 +29,7 @@ let mockRedisUrl = '';
 const ctx: {
   email?: string;
   password?: string;
+  userId?: string;
   csrfCookie?: string;
   csrfToken?: string;
   sessionCookie?: string;
@@ -42,6 +44,10 @@ function setCookieValue(res: Res, name: string): string | undefined {
 
 function post(path: string, body: unknown, headers: Record<string, string> = {}): Promise<Res> {
   return fetch(`${BASE}${path}`, { method: 'POST', headers: { 'content-type': 'application/json', origin: ORIGIN, ...headers }, body: JSON.stringify(body) });
+}
+
+function get(path: string, headers: Record<string, string> = {}): Promise<Res> {
+  return fetch(`${BASE}${path}`, { headers: { origin: ORIGIN, ...headers } });
 }
 
 function csrfHeaders(): Record<string, string> {
@@ -69,6 +75,16 @@ function errorPayloads(): Array<Record<string, any>> {
 }
 
 beforeAll(async () => {
+  // Keep the suite repeatable on a persistent shared database: ensure a published
+  // product exists (prior runs may have left everything archived/draft).
+  const db = new PrismaClient({ datasources: { db: { url: DATABASE_URL } } });
+  const anyPublished = await db.product.findFirst({ where: { status: 'PUBLISHED' } });
+  if (!anyPublished) {
+    const candidate = await db.product.findFirst({ orderBy: { createdAt: 'asc' } });
+    if (candidate) await db.product.update({ where: { id: candidate.id }, data: { status: 'PUBLISHED' } });
+  }
+  await db.$disconnect();
+
   mockRedis = createServer((req, res) => {
     if (req.method === 'POST' && req.url === '/pipeline') {
       let body = '';
@@ -158,8 +174,9 @@ describe('Phase 1-5 integration: rate limit -> CSRF -> app -> monitoring -> emai
     ctx.csrfCookie = setCookieValue(res, 'aurelia_csrf') ?? ctx.csrfCookie;
     ctx.csrfToken = ctx.csrfCookie?.split('=')[1];
     expect(ctx.csrfCookie).toBeDefined();
-    const user = await res.json() as Record<string, unknown>;
+    const user = await res.json() as { id?: string; passwordHash?: string };
     expect(user.id).toBeDefined();
+    ctx.userId = user.id;
     expect(user.passwordHash).toBeUndefined();
     expect(JSON.stringify(user)).not.toContain(ctx.password);
   });
@@ -242,5 +259,136 @@ describe('Phase 1-5 integration: rate limit -> CSRF -> app -> monitoring -> emai
     const serialized = JSON.stringify(payload);
     expect(serialized).not.toContain(ctx.password!);
     expect(ctx.sessionCookie && !serialized.includes(ctx.sessionCookie)).toBe(true);
+  });
+});
+
+describe('Items 6-9: DRM, Owner DTO validation, archive, audit coverage', () => {
+  let ownerSession: string | undefined;
+  let ownerCsrfCookie: string | undefined;
+  let ownerToken: string | undefined;
+  let productId = '';
+
+  function ownerHeaders(): Record<string, string> {
+    return { cookie: [ownerCsrfCookie, ownerSession].filter(Boolean).join('; '), 'x-csrf-token': ownerToken || '' };
+  }
+
+  it('owner logs in (seeded account) and sees the library management route', async () => {
+    const res = await post('/auth/login', { identifier: 'owner@aurelia.test', password: 'ChangeMe123!' }, csrfHeaders());
+    expect([200, 201]).toContain(res.status);
+    ownerSession = setCookieValue(res, 'aurelia_session');
+    ownerCsrfCookie = setCookieValue(res, 'aurelia_csrf') ?? ctx.csrfCookie;
+    ownerToken = ownerCsrfCookie?.split('=')[1];
+    expect(ownerSession).toBeDefined();
+    const library = await get('/owner/library', ownerHeaders());
+    expect(library.status).toBe(200);
+  });
+
+  it('item 7: invalid Owner payloads are rejected by DTO validation (400), and a valid update passes', async () => {
+    const catalog = await get('/products');
+    const products = await catalog.json() as Array<{ id: string }>;
+    productId = products[0].id;
+    const badPrice = await fetch(`${BASE}/owner/products/${productId}`, { method: 'PATCH', headers: { 'content-type': 'application/json', origin: ORIGIN, ...ownerHeaders() }, body: JSON.stringify({ price: 'not-a-number' }) });
+    expect(badPrice.status).toBe(400);
+    const emptyBook = await post('/owner/books', {}, ownerHeaders());
+    expect(emptyBook.status).toBe(400);
+
+    // a valid update (also feeds the audit-coverage assertion later)
+    const update = await fetch(`${BASE}/owner/products/${productId}`, { method: 'PATCH', headers: { 'content-type': 'application/json', origin: ORIGIN, ...ownerHeaders() }, body: JSON.stringify({ description: `Integration update ${Date.now()}` }) });
+    expect([200, 201]).toContain(update.status);
+  });
+
+  it('item 6: grant with limit, watermarked downloads, count enforcement, IP/UA logs', async () => {
+    // fresh counter state but keep the payment-issued orderId (repeatable on a persistent db)
+    const db = new PrismaClient({ datasources: { db: { url: DATABASE_URL } } });
+    await db.downloadPermission.upsert({
+      where: { userId_productId: { userId: ctx.userId!, productId } },
+      update: { downloadCount: 0, revokedAt: null },
+      create: { userId: ctx.userId!, productId, orderId: ctx.orderId, maxDownloads: 2 },
+    });
+    await db.$disconnect();
+
+    // upload a small primary book file so the download stream has content
+    const form = new FormData();
+    form.append('file', new Blob(['Aurelia sample book content'], { type: 'text/plain' }), 'sample-book.txt');
+    form.append('fileType', 'book');
+    const upload = await fetch(`${BASE}/owner/books/${productId}/upload`, { method: 'POST', headers: { origin: ORIGIN, ...ownerHeaders() }, body: form });
+    if (upload.status !== 201) console.error('UPLOAD_FAILED_LOGS:\n', serverLogs.slice(-25).join(''));
+    expect(upload.status).toBe(201);
+
+    const grant = await post(`/owner/users/${ctx.userId}/library/${productId}`, { maxDownloads: 2 }, ownerHeaders());
+    expect(grant.status).toBe(201);
+    const granted = await grant.json() as { maxDownloads: number | null; downloadCount: number };
+    expect(granted.maxDownloads).toBe(2);
+
+    // customer downloads twice, gets watermarked copies
+    const customerCookie = { cookie: ctx.sessionCookie || '' };
+    const first = await get(`/downloads/${productId}`, customerCookie);
+    expect(first.status).toBe(200);
+    const firstText = await first.text();
+    expect(firstText).toContain('Aurelia sample book content');
+    expect(firstText).toContain(ctx.email!);
+    expect(firstText).toContain(ctx.orderId!);
+    const second = await get(`/downloads/${productId}`, customerCookie);
+    expect(second.status).toBe(200);
+    // third attempt exceeds the limit of 2
+    const third = await get(`/downloads/${productId}`, customerCookie);
+    expect(third.status).toBe(403);
+
+    // logs recorded with ip and user-agent
+    const logsRes = await get(`/owner/users/${ctx.userId}/downloads/${productId}/logs`, ownerHeaders());
+    expect(logsRes.status).toBe(200);
+    const logsData = await logsRes.json() as { permission: { downloadCount: number; maxDownloads: number | null }; logs: Array<{ ip: string | null; userAgent: string | null }> };
+    expect(logsData.permission.downloadCount).toBe(2);
+    expect(logsData.logs.length).toBe(2);
+    expect(logsData.logs.every(log => typeof log.ip === 'string' && log.ip.length > 0)).toBe(true);
+    expect(logsData.logs.every(log => typeof log.userAgent === 'string' && log.userAgent.length > 0)).toBe(true);
+  });
+
+  it('item 6: revoke blocks downloads immediately, restore re-enables state', async () => {
+    const revoke = await fetch(`${BASE}/owner/users/${ctx.userId}/library/${productId}`, { method: 'DELETE', headers: { origin: ORIGIN, ...ownerHeaders() } });
+    expect(revoke.status).toBe(200);
+    const blocked = await get(`/downloads/${productId}`, { cookie: ctx.sessionCookie || '' });
+    expect(blocked.status).toBe(403);
+    const restored = await post(`/owner/users/${ctx.userId}/library/${productId}/restore`, {}, ownerHeaders());
+    expect(restored.status).toBe(201);
+  });
+
+  it('item 8: archive is a real ARCHIVED state, hidden from catalog, restorable', async () => {
+    const before = await get(`/owner/books/${productId}`, ownerHeaders());
+    const originalStatus = ((await before.json()) as { status: string }).status;
+
+    const archive = await post(`/owner/books/${productId}/archive`, {}, ownerHeaders());
+    expect(archive.status).toBe(201);
+    const archived = await archive.json() as { status: string; archivedAt: string | null };
+    expect(archived.status).toBe('ARCHIVED');
+    expect(archived.archivedAt).toBeTruthy();
+
+    const catalog = await get('/products');
+    const products = await catalog.json() as Array<{ id: string }>;
+    expect(products.some(product => product.id === productId)).toBe(false);
+
+    const restore = await post(`/owner/books/${productId}/restore`, {}, ownerHeaders());
+    expect(restore.status).toBe(201);
+    const restored = await restore.json() as { status: string; archivedAt: string | null };
+    expect(restored.status).toBe('DRAFT');
+    expect(restored.archivedAt).toBeNull();
+
+    // keep the suite repeatable: return the product to its pre-test status
+    if (originalStatus === 'PUBLISHED') {
+      const republish = await post(`/owner/books/${productId}/publish`, {}, ownerHeaders());
+      expect(republish.status).toBe(201);
+    }
+  });
+
+  it('item 9: audit log contains entries for the mutations performed above', async () => {
+    const res = await get('/owner/audit?limit=50', ownerHeaders());
+    expect(res.status).toBe(200);
+    const entries = await res.json() as Array<{ action: string; entity: string }>;
+    const actions = entries.map(entry => entry.action);
+    expect(actions).toContain('grant');
+    expect(actions).toContain('revoke');
+    expect(actions).toContain('restore');
+    expect(actions).toContain('archive');
+    expect(actions).toContain('update');
   });
 });
