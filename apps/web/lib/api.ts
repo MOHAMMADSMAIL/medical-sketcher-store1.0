@@ -13,6 +13,14 @@ export async function api<T = any>(path: string, init: RequestInit = {}): Promis
   if (init.body && !(init.body instanceof FormData) && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }
+  if (typeof document !== 'undefined' && !['GET', 'HEAD', 'OPTIONS'].includes((init.method || 'GET').toUpperCase())) {
+    let token = document.cookie.split('; ').find(value => value.startsWith('aurelia_csrf='))?.split('=')[1];
+    if (!token) {
+      await fetch(`${API_URL}/api/auth/csrf`, { credentials: 'include' });
+      token = document.cookie.split('; ').find(value => value.startsWith('aurelia_csrf='))?.split('=')[1];
+    }
+    if (token) headers.set('X-CSRF-Token', token);
+  }
   const response = await fetch(`${API_URL}/api${path}`, { ...init, headers, credentials: 'include' });
   const data = await response.json().catch(() => null);
   if (!response.ok) {

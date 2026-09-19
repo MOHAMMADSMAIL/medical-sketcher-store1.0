@@ -1,16 +1,22 @@
 // API Client for Owner endpoints
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const csrfHeaders = async (): Promise<Record<string, string>> => {
+  let token = document.cookie.split('; ').find(value => value.startsWith('aurelia_csrf='))?.split('=')[1];
+  if (!token) { await fetch(`${API_URL}/api/auth/csrf`, { credentials: 'include' }); token = document.cookie.split('; ').find(value => value.startsWith('aurelia_csrf='))?.split('=')[1]; }
+  return token ? { 'X-CSRF-Token': token } : {};
+};
 
 class OwnerAPIClient {
   private baseURL = `${API_URL}/api`;
 
   private async fetchWithAuth(url: string, options: RequestInit = {}) {
+    const csrf = !['GET', 'HEAD', 'OPTIONS'].includes((options.method || 'GET').toUpperCase()) ? await csrfHeaders() : {};
+    const headers = new Headers(options.headers);
+    headers.set('Content-Type', 'application/json');
+    Object.entries(csrf).forEach(([name, value]) => headers.set(name, value));
     const response = await fetch(`${this.baseURL}${url}`, {
       ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
+      headers,
       credentials: 'include',
     });
 
@@ -76,6 +82,7 @@ class OwnerAPIClient {
     return fetch(`${this.baseURL}/owner/books/${bookId}/upload`, {
       method: 'POST',
       body: formData,
+      headers: await csrfHeaders(),
       credentials: 'include',
     }).then(r => {
       if (!r.ok) throw new Error('Upload failed');
@@ -279,6 +286,7 @@ class OwnerAPIClient {
     return fetch(`${this.baseURL}/owner/media/upload`, {
       method: 'POST',
       body: formData,
+      headers: await csrfHeaders(),
       credentials: 'include',
     }).then(r => r.json());
   }

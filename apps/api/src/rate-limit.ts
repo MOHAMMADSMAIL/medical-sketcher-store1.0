@@ -1,3 +1,34 @@
 import type { NextFunction, Request, Response } from 'express';
-const buckets = new Map<string, { started: number; count: number }>();
-export function rateLimit(req: Request, res: Response, next: NextFunction) { const sensitive = /\/auth\/(login|register)|\/payments|\/downloads|\/owner/.test(req.path); if (!sensitive) return next(); const ttl = Number(process.env.RATE_LIMIT_TTL || 60000); const max = Number(process.env.RATE_LIMIT_MAX || 100); const key = `${req.ip}:${req.path}`; const now = Date.now(); const bucket = buckets.get(key); if (!bucket || now - bucket.started >= ttl) { buckets.set(key, { started: now, count: 1 }); return next(); } bucket.count += 1; if (bucket.count > max) return res.status(429).json({ message: 'Too many requests' }); return next(); }
+
+function policy(path: string): readonly [number, number] {
+  if (/\/auth\/login/.test(path)) return [5, 60];
+  if (/\/auth\/register/.test(path)) return [3, 60];
+  if (/\/payments/.test(path)) return [10, 60];
+  if (/\/owner/.test(path)) return [60, 60];
+  return [180, 60];
+}
+
+export async function rateLimit(req: Request, res: Response, next: NextFunction) {
+  const endpoint = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!endpoint || !token) {
+    if (process.env.NODE_ENV === 'production') return res.status(503).json({ message: 'Rate limiting is not configured' });
+    return next();
+  }
+  const [limit, seconds] = policy(req.path);
+  const key = `aurelia:ratelimit:${req.path}:${req.ip}`;
+  try {
+    const response = await fetch(`${endpoint.replace(/\/$/, '')}/pipeline`, {
+      method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify([['INCR', key], ['EXPIRE', key, seconds, 'NX']]),
+    });
+    const result = await response.json() as Array<{ result?: number }>;
+    const count = result[0]?.result;
+    if (!response.ok || typeof count !== 'number') throw new Error('Redis counter unavailable');
+    res.setHeader('X-RateLimit-Limit', String(limit));
+    if (count > limit) return res.status(429).json({ message: 'Too many requests' });
+    return next();
+  } catch {
+    return res.status(503).json({ message: 'Rate limiting temporarily unavailable' });
+  }
+}
