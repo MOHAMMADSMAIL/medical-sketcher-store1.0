@@ -26,7 +26,8 @@ export function useOwnerAuth() {
         }
 
         const userData = await response.json();
-        if (userData.role === 'owner' || userData.role === 'admin') {
+        const role = String(userData.role || '').toUpperCase();
+        if (role === 'OWNER' || role === 'ADMIN') {
           setIsOwner(true);
           setUser(userData);
         } else {

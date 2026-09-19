@@ -57,6 +57,15 @@ export class OwnerController {
     return archived;
   }
 
+  @Delete('books/:id')
+  async deleteBook(@Req() req: Request & { user: { id: string } }, @Param('id') id: string) {
+    const sold = await this.prisma.orderItem.count({ where: { productId: id } });
+    if (sold > 0) throw new BadRequestException('This book has recorded sales and cannot be deleted — archive it instead.');
+    const deleted = await this.owner.deleteBook(id);
+    await this.owner.createAuditLog(req.user.id, 'delete', 'Product', id, { title: deleted.title });
+    return { deleted: true, id };
+  }
+
   @Post('books/:id/upload')
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 100 * 1024 * 1024 }, fileFilter: (_req, file, cb) => cb(null, /^(application|audio|image|text)\//.test(file.mimetype)) }))
   uploadBook(@Param('id') id: string, @UploadedFile() file: any, @Body('fileType') fileType = 'book') {

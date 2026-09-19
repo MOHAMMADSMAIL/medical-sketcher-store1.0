@@ -16,7 +16,10 @@ export function safeStorageKey(input: string) {
 }
 
 export class LocalStorageProvider implements StorageProvider {
-  constructor(private readonly root = process.env.STORAGE_LOCAL_ROOT || resolve(__dirname, '../../../storage')) {}
+  // Resolve relative to the repo root (apps/api/src -> apps/api -> repo root), not __dirname: the compiled
+  // file lives in dist/, which pointed writes at <repo>/../storage (outside the checkout) while reads
+  // expected <repo>/storage — a split brain where uploads vanished and downloads 404'd.
+  constructor(private readonly root = process.env.STORAGE_LOCAL_ROOT || resolve(__dirname, '..', '..', '..', 'storage')) {}
   private filePath(key: string) { const file = resolve(this.root, safeStorageKey(key)); if (relative(this.root, file).startsWith('..')) throw new Error('Invalid storage path'); return file; }
   async put(key: string, data: Buffer) { const file = this.filePath(key); await mkdir(join(file, '..'), { recursive: true }); await writeFile(file, data); }
   getStream(key: string) { return createReadStream(this.filePath(key)); }

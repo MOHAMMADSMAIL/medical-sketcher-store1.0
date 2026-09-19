@@ -74,7 +74,7 @@ class OwnerAPIClient {
   }
 
   // Upload book files
-  async uploadBookFile(bookId: string, file: File, fileType: 'pdf' | 'epub' | 'cover' | 'preview') {
+  async uploadBookFile(bookId: string, file: File, fileType: 'book' | 'pdf' | 'epub' | 'cover' | 'preview') {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('fileType', fileType);
