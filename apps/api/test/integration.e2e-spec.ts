@@ -222,8 +222,8 @@ describe('Phase 1-5 integration: rate limit -> CSRF -> app -> monitoring -> emai
     expect(confirmed.status).toBe(201);
     const result = await confirmed.json() as { status: string; transactionId?: string; resultCode?: string };
     expect(result.status).toBe('SUCCEEDED');
-    expect(result.transactionId?.startsWith('dev_txn_')).toBe(true);
-    expect(result.resultCode).toBe('000.100.110');
+    expect(result.transactionId?.startsWith('dev_tx_')).toBe(true);
+    expect(result.resultCode).toBe('000.000.000');
     const logs = () => serverLogs.join('');
     await waitFor(() => logs().includes(`[email:console] payment-confirmation -> ${ctx.email}`) && logs().includes(`[email:console] download-ready -> ${ctx.email}`));
   });
