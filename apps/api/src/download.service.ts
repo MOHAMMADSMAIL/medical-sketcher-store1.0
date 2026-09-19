@@ -69,7 +69,7 @@ export class DownloadService {
       const chunks: Buffer[] = [];
       object.on('data', (chunk: Buffer) => chunks.push(chunk));
       object.on('end', () => resolve(Buffer.concat(chunks)));
-      object.on('error', reject);
+      object.on('error', () => reject(new NotFoundException('Book file is unavailable — please contact support')));
     });
     const purchaser = await this.prisma.user.findUnique({ where: { id: permission.userId }, select: { email: true } });
     const watermarkedBuffer = watermarked(buffer, media?.mimeType || 'application/octet-stream', purchaser?.email || permission.userId, permission.orderId);

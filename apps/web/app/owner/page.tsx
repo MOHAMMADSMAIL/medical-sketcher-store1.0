@@ -6,7 +6,8 @@ type Tab = 'dashboard' | 'editor' | 'books' | 'reviews' | 'pages' | 'analytics' 
 type Product = { id: string; title: string; slug: string; description: string; price: string | number; currency: string; status: string; author?: { name: string }; category?: { name: string }; _count?: { orderItems: number; reviews: number } };
 type Page = { id: string; slug: string; title: string; status: string; sections: { id: string; type: string; content: Record<string, unknown> }[]; versions: { id: string; version: number; content: unknown }[] };
 
-const api = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+import { api as apiFetch } from '@/lib/api';
+
 const nav: { id: Tab; label: string; icon: string }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: '⌂' }, { id: 'editor', label: 'Site Editor', icon: '✦' },
   { id: 'books', label: 'Books', icon: '▤' }, { id: 'reviews', label: 'Reviews', icon: '◌' },
@@ -15,9 +16,7 @@ const nav: { id: Tab; label: string; icon: string }[] = [
 ];
 
 async function request(path: string, init?: RequestInit) {
-  const response = await fetch(`${api}/api/owner${path}`, { ...init, credentials: 'include', headers: { 'Content-Type': 'application/json', ...(init?.headers || {}) } });
-  if (!response.ok) throw new Error((await response.text()) || `Request failed (${response.status})`);
-  return response.status === 204 ? null : response.json();
+  return apiFetch<any>(`/owner${path}`, init);
 }
 
 function Metric({ label, value, tone = 'olive' }: { label: string; value: string | number; tone?: string }) {

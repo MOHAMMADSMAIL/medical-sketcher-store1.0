@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { api } from '@/lib/api';
 import styles from './Login.module.css';
 
 export default function OwnerLoginPage() {
@@ -16,22 +17,12 @@ export default function OwnerLoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/auth/login`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ identifier, password }),
-        }
-      );
+      // api() handles the CSRF token handshake and normalizes API errors.
+      const user = await api<{ role: string }>('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ identifier, password }),
+      });
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Login failed');
-      }
-
-      const user = await response.json();
       if (user.role !== 'OWNER' && user.role !== 'ADMIN') {
         throw new Error('Unauthorized: Only owners and admins can access this area');
       }

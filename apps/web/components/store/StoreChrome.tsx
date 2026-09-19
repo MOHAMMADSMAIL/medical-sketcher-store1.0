@@ -97,6 +97,13 @@ export default function StoreChrome({ children, scene = 0 }: { children: React.R
           <div className="text-sm leading-8"><b>Your account</b><br /><Link href="/library">{t.library}</Link><br /><Link href="/wishlist">{t.wishlist}</Link><br /><Link href="/orders">{t.orders}</Link></div>
           <div className="text-sm leading-8"><b>Elsewhere</b><br /><a className="underline" target="_blank" rel="noreferrer" href="https://www.instagram.com/medical.sketcher">Instagram ↗</a><br /><span className="text-[#68705f]">Built by <a className="underline" target="_blank" rel="noreferrer" href="https://www.instagram.com/muhammad_allouzi">Muhammad Allouzi</a></span></div>
         </div>
+        <div className="mx-auto mt-8 flex flex-wrap gap-x-6 gap-y-2 text-xs text-[#737968]">
+          <Link href="/legal/privacy-policy">Privacy Policy</Link>
+          <Link href="/legal/terms-of-service">Terms of Service</Link>
+          <Link href="/legal/refund-policy">Refund Policy</Link>
+          <Link href="/legal/copyright-policy">Digital Content &amp; Copyright</Link>
+          <Link href="/legal/cookie-policy">Cookie Policy</Link>
+        </div>
         <div className="mx-auto mt-12 flex max-w-[1360px] justify-between border-t border-[#2c3325]/10 pt-5 text-xs text-[#737968]"><span>Medical Sketcher</span><span>Protected digital editions</span></div>
       </footer>
     </div>
