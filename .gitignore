@@ -10,5 +10,7 @@ coverage/
 _conversation_source/
 .prisma/
 .DS_Store
-storage/private/
+# User uploads and generated content — never in git
+storage/
+.freebuff/
 *.tsbuildinfo
