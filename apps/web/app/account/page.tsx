@@ -44,11 +44,11 @@ export default function AccountPage() {
 
             {/* Task 7: attach a phone number so the owner can identify the buyer. */}
             <form onSubmit={linkPhone} className="rounded-[2rem] border border-white/60 bg-[#f7f5ed]/75 p-6">
-              <p className="text-sm font-semibold">Phone number</p>
-              <p className="mt-1 text-xs text-[#66705d]">Optional — lets us identify your orders and enables phone sign-in.</p>
+              <p className="text-sm font-semibold">{t.phoneLabel}</p>
+              <p className="mt-1 text-xs text-[#66705d]">{t.phoneOptionalHint}</p>
               <div className="mt-3 flex gap-2">
                 <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+962 7…" className="flex-1 rounded-xl border border-[#526047]/15 bg-white px-4 py-3" />
-                <button className="rounded-full bg-[#283224] px-6 py-3 text-sm font-semibold text-white">Link</button>
+                <button className="rounded-full bg-[#283224] px-6 py-3 text-sm font-semibold text-white">{t.linkPhoneBtn}</button>
               </div>
               {phoneStatus && <p className="mt-2 text-sm text-[#8a5047]">{phoneStatus}</p>}
             </form>

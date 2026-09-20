@@ -83,16 +83,16 @@ export default function LoginForm() {
             <path fill="#FBBC05" d="M3.95 10.71a5.41 5.41 0 0 1 0-3.42V4.96H.96a9 9 0 0 0 0 8.08l2.99-2.33z" />
             <path fill="#EA4335" d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.58-2.58A9 9 0 0 0 .96 4.96l2.99 2.33A5.36 5.36 0 0 1 9 3.58z" />
           </svg>
-          Continue with Google
+          {t.continueGoogle}
         </a>
 
         <div className="my-6 flex items-center gap-3 text-xs uppercase tracking-wide text-[#66705d]">
-          <span className="h-px flex-1 bg-[#526047]/15" /> or <span className="h-px flex-1 bg-[#526047]/15" />
+          <span className="h-px flex-1 bg-[#526047]/15" /> {t.orDivider} <span className="h-px flex-1 bg-[#526047]/15" />
         </div>
 
         <div className="flex gap-2 text-sm">
-          <button type="button" onClick={() => { setMode('password'); setStatus(''); }} className={`flex-1 rounded-full px-4 py-2 ${mode === 'password' ? 'bg-[#283224] text-white' : 'border border-[#526047]/25'}`}>Email</button>
-          <button type="button" onClick={() => { setMode('phone'); setStatus(''); setCodeSent(false); }} className={`flex-1 rounded-full px-4 py-2 ${mode === 'phone' ? 'bg-[#283224] text-white' : 'border border-[#526047]/25'}`}>Phone</button>
+          <button type="button" onClick={() => { setMode('password'); setStatus(''); }} className={`flex-1 rounded-full px-4 py-2 ${mode === 'password' ? 'bg-[#283224] text-white' : 'border border-[#526047]/25'}`}>{t.emailTab}</button>
+          <button type="button" onClick={() => { setMode('phone'); setStatus(''); setCodeSent(false); }} className={`flex-1 rounded-full px-4 py-2 ${mode === 'phone' ? 'bg-[#283224] text-white' : 'border border-[#526047]/25'}`}>{t.phoneTab}</button>
         </div>
 
         {mode === 'password' && (
@@ -106,15 +106,15 @@ export default function LoginForm() {
         {mode === 'phone' && !codeSent && (
           <form onSubmit={requestCode} className="mt-4 grid gap-4 rounded-[2rem] border border-white/60 bg-[#f7f5ed]/75 p-6">
             <input required type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+962 7…" className="rounded-xl border border-[#526047]/15 bg-white px-4 py-3" />
-            <button disabled={busy} className="rounded-full bg-[#283224] py-3 text-sm font-semibold text-white">Send code</button>
-            <p className="text-xs text-[#66705d]">Phone sign-in works for numbers already linked to an account.</p>
+            <button disabled={busy} className="rounded-full bg-[#283224] py-3 text-sm font-semibold text-white">{t.sendCode}</button>
+            <p className="text-xs text-[#66705d]">{t.codeSentHint}</p>
           </form>
         )}
 
         {mode === 'phone' && codeSent && (
           <form onSubmit={verifyCode} className="mt-4 grid gap-4 rounded-[2rem] border border-white/60 bg-[#f7f5ed]/75 p-6">
             <input required inputMode="numeric" maxLength={6} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))} placeholder="6-digit code" className="rounded-xl border border-[#526047]/15 bg-white px-4 py-3 text-center text-lg tracking-[0.4em]" />
-            <button disabled={busy} className="rounded-full bg-[#283224] py-3 text-sm font-semibold text-white">Verify & sign in</button>
+            <button disabled={busy} className="rounded-full bg-[#283224] py-3 text-sm font-semibold text-white">{t.verifySignIn}</button>
           </form>
         )}
 

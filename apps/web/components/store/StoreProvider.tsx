@@ -27,11 +27,21 @@ type StoreContextValue = {
 const StoreContext = createContext<StoreContextValue | null>(null);
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
-  const [lang, setLang] = useState<Lang>('EN');
+  const [lang, setLangState] = useState<Lang>('EN');
   const [user, setUser] = useState<User>(null);
   const [cart, setCart] = useState<Cart>(null);
   const [liked, setLiked] = useState<string[]>([]);
   const [notice, setNotice] = useState('');
+
+  // Persist the chosen language across reloads.
+  useEffect(() => {
+    const saved = window.localStorage.getItem('store_lang') as Lang | null;
+    if (saved && (saved === 'EN' || saved === 'AR' || saved === 'DE')) setLangState(saved);
+  }, []);
+  const setLang = useCallback((next: Lang) => {
+    setLangState(next);
+    window.localStorage.setItem('store_lang', next);
+  }, []);
 
   const toast = useCallback((message: string) => {
     setNotice(message);

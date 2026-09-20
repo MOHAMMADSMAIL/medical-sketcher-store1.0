@@ -48,7 +48,7 @@ export default function HomeView({ products }: { products: Book[] }) {
                 <p className="text-xs font-bold uppercase tracking-[.2em] text-[#737d63]">Four ways to practise</p>
                 <h2 className="serif mt-3 text-4xl lg:text-5xl">Your language studio.</h2>
               </div>
-              <p className="max-w-sm text-sm leading-6 text-[#66705d]">Keep every part of language learning in one considered place.</p>
+              <p className="max-w-sm text-sm leading-6 text-[#66705d]">{t.skillsIntro}</p>
             </div>
             <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {skills.map(([icon, title, description, skillKey]) => (
@@ -60,11 +60,11 @@ export default function HomeView({ products }: { products: Book[] }) {
                     <span className="mt-6 block text-sm font-semibold text-[#58684a]">{tr(lang, 'Start the exam', 'ابدأ الامتحان', 'Test starten')} ↗</span>
                   </Link>
                 ) : (
-                  <button key={title} onClick={() => toast(`${title} practice is being prepared.`)} className="group rounded-[1.5rem] border border-[#566149]/12 bg-white/55 p-5 text-left transition hover:-translate-y-1 hover:bg-[#e6e8d9]">
+                  <button key={title} onClick={() => toast(tr(lang, `${title} practice is being prepared.`, `${title} — التدريب قيد التحضير.`, `${title} – die Übungen entstehen gerade.`))} className="group rounded-[1.5rem] border border-[#566149]/12 bg-white/55 p-5 text-left transition hover:-translate-y-1 hover:bg-[#e6e8d9]">
                     <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[#d9dcc7] text-xl text-[#45523b]">{icon}</span>
                     <h3 className="serif mt-10 text-2xl">{title}</h3>
                     <p className="mt-2 text-sm text-[#67705f]">{description}</p>
-                    <span className="mt-6 block text-sm font-semibold text-[#58684a]">Explore ↗</span>
+                    <span className="mt-6 block text-sm font-semibold text-[#58684a]">{t.exploreMore} ↗</span>
                   </button>
                 )
               ))}
@@ -74,7 +74,7 @@ export default function HomeView({ products }: { products: Book[] }) {
 
         <section className="relative mx-auto grid min-h-[670px] max-w-[1440px] overflow-hidden px-5 pb-16 pt-16 lg:grid-cols-[.93fr_1.07fr] lg:px-10 lg:pt-24">
           <div className="hero-copy relative z-10 flex flex-col justify-center">
-            <p className="mb-6 text-xs font-bold uppercase tracking-[.22em] text-[#667054]">Digital bookstore · made for curious minds</p>
+            <p className="mb-6 text-xs font-bold uppercase tracking-[.22em] text-[#667054]">{t.eyebrow}</p>
             <h1 className="serif max-w-xl text-5xl leading-[.98] sm:text-6xl lg:text-8xl">{t.title}</h1>
             <p className="mt-7 max-w-md text-base leading-7 text-[#515a4d]">{t.text}</p>
             <div className="mt-9 flex flex-wrap gap-3">
@@ -82,9 +82,9 @@ export default function HomeView({ products }: { products: Book[] }) {
               <a href="#learn" className="rounded-full border border-[#2c3325]/20 bg-white/50 px-6 py-3.5 text-sm font-semibold">{t.start}</a>
             </div>
             <div className="mt-14 flex gap-8 border-t border-[#2c3325]/12 pt-5 text-xs text-[#68705f]">
-              <span><b className="block text-lg text-[#273024]">∞</b>instant access</span>
-              <span><b className="block text-lg text-[#273024]">3</b>languages</span>
-              <span><b className="block text-lg text-[#273024]">4.9/5</b>reader love</span>
+              <span><b className="block text-lg text-[#273024]">∞</b>{t.statInstant}</span>
+              <span><b className="block text-lg text-[#273024]">3</b>{t.statLangs}</span>
+              <span><b className="block text-lg text-[#273024]">4.9/5</b>{t.statLove}</span>
             </div>
           </div>
           <div className="relative mt-10 min-h-[410px] lg:mt-0">
@@ -92,14 +92,14 @@ export default function HomeView({ products }: { products: Book[] }) {
             <div className="absolute inset-0 opacity-30 grain" />
             <ImageWithFallback src={hero} alt="Medical Sketcher character standing beside a stack of books" className="drift absolute bottom-[-6%] right-[-9%] h-[113%] w-[115%] object-cover object-center mix-blend-multiply" />
             <div className="absolute bottom-7 left-5 max-w-[210px] rounded-[1.35rem] border border-white/70 bg-white/55 p-4 shadow-xl backdrop-blur-md">
-              <p className="text-[10px] font-bold uppercase tracking-[.16em] text-[#68705f]">Today’s gentle prompt</p>
-              <p className="serif mt-2 text-lg leading-5">“Learn one word that changes a room.”</p>
+              <p className="text-[10px] font-bold uppercase tracking-[.16em] text-[#68705f]">{t.promptLabel}</p>
+              <p className="serif mt-2 text-lg leading-5">{t.promptText}</p>
             </div>
             <a target="_blank" rel="noreferrer" href="https://www.instagram.com/medical.sketcher" className="instagram-app absolute left-[42%] top-[38%] z-10 grid place-items-center text-center transition hover:-translate-y-1">
               <span className="text-lg leading-none">◎</span><b className="mt-1 block text-[10px]">Instagram</b>
               <span className="mt-1 rounded-full bg-white/80 px-2 py-0.5 text-[9px] font-bold text-[#49573d]">Follow</span>
             </a>
-            <div className="absolute right-6 top-7 rotate-[-4deg] rounded-2xl border border-white/70 bg-[#364033] px-4 py-3 text-xs text-white shadow-xl">✦ Your library grows with you</div>
+            <div className="absolute right-6 top-7 rotate-[-4deg] rounded-2xl border border-white/70 bg-[#364033] px-4 py-3 text-xs text-white shadow-xl">{t.growNote}</div>
           </div>
         </section>
 

@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import styles from './OwnerLayout.module.css';
+import { useOwnerLang, type OwnerLang } from '@/lib/i18n-owner';
 
 interface OwnerLayoutProps {
   children: React.ReactNode;
@@ -12,23 +13,26 @@ interface OwnerLayoutProps {
 export function OwnerLayout({ children, user }: OwnerLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const router = useRouter();
+  const { lang, setLang, t, langs } = useOwnerLang();
+  const dir = lang === 'AR' ? 'rtl' : 'ltr';
 
   const menuItems = [
-    { href: '/owner', label: 'Dashboard', icon: '📊' },
-    { href: '/owner/books', label: 'Books', icon: '📚' },
-    { href: '/owner/authors', label: 'Authors', icon: '✍️' },
-    { href: '/owner/categories', label: 'Categories', icon: '🏷️' },
-    { href: '/owner/orders', label: 'Orders', icon: '🛒' },
-    { href: '/owner/users', label: 'Users', icon: '👥' },
-    { href: '/owner/library', label: 'Library', icon: '📖' },
-    { href: '/owner/reviews', label: 'Reviews', icon: '⭐' },
-    { href: '/owner/lessons', label: 'Lessons', icon: '🎓' },
-    { href: '/owner/assessments', label: 'Assessments', icon: '✅' },
-    { href: '/owner/cms', label: 'CMS', icon: '📝' },
-    { href: '/owner/media', label: 'Media', icon: '🖼️' },
-    { href: '/owner/analytics', label: 'Analytics', icon: '📈' },
-    { href: '/owner/audit', label: 'Audit Logs', icon: '🔍' },
-    { href: '/owner/settings', label: 'Settings', icon: '⚙️' },
+    { href: '/owner', icon: '📊' },
+    { href: '/owner/books', icon: '📚' },
+    { href: '/owner/authors', icon: '✍️' },
+    { href: '/owner/categories', icon: '🏷️' },
+    { href: '/owner/orders', icon: '🛒' },
+    { href: '/owner/users', icon: '👥' },
+    { href: '/owner/library', icon: '📖' },
+    { href: '/owner/reviews', icon: '⭐' },
+    { href: '/owner/lessons', icon: '🎓' },
+    { href: '/owner/assessments', icon: '✅' },
+    { href: '/owner/exams', icon: '📝' },
+    { href: '/owner/cms', icon: '🗂️' },
+    { href: '/owner/media', icon: '🖼️' },
+    { href: '/owner/analytics', icon: '📈' },
+    { href: '/owner/audit', icon: '🔍' },
+    { href: '/owner/settings', icon: '⚙️' },
   ];
 
   const handleLogout = async () => {
@@ -44,11 +48,11 @@ export function OwnerLayout({ children, user }: OwnerLayoutProps) {
   };
 
   return (
-    <div className={styles.layout}>
+    <div className={styles.layout} dir={dir}>
       {/* Sidebar */}
       <aside className={`${styles.sidebar} ${sidebarOpen ? styles.open : styles.closed}`}>
         <div className={styles.sidebarHeader}>
-          <h2 className={styles.logo}>Owner Studio</h2>
+          <h2 className={styles.logo}>{t.studio}</h2>
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className={styles.toggleBtn}
@@ -62,7 +66,7 @@ export function OwnerLayout({ children, user }: OwnerLayoutProps) {
           {menuItems.map(item => (
             <Link key={item.href} href={item.href} className={styles.navItem}>
               <span className={styles.navIcon}>{item.icon}</span>
-              {sidebarOpen && <span className={styles.navLabel}>{item.label}</span>}
+              {sidebarOpen && <span className={styles.navLabel}>{t.nav[item.href] || item.href}</span>}
             </Link>
           ))}
         </nav>
@@ -70,7 +74,7 @@ export function OwnerLayout({ children, user }: OwnerLayoutProps) {
         <div className={styles.sidebarFooter}>
           <button onClick={handleLogout} className={styles.logoutBtn}>
             <span className={styles.navIcon}>🚪</span>
-            {sidebarOpen && <span>Logout</span>}
+            {sidebarOpen && <span>{t.logout}</span>}
           </button>
         </div>
       </aside>
@@ -87,7 +91,7 @@ export function OwnerLayout({ children, user }: OwnerLayoutProps) {
             >
               ☰
             </button>
-            <h1 className={styles.pageTitle}>Medical Sketcher Admin</h1>
+            <h1 className={styles.pageTitle}>{t.adminTitle}</h1>
           </div>
           <div className={styles.headerRight}>
             <div className={styles.userInfo}>
@@ -98,10 +102,28 @@ export function OwnerLayout({ children, user }: OwnerLayoutProps) {
                 </>
               )}
             </div>
+            <div style={{ display: 'flex', gap: 4 }}>
+              {langs.map((code) => (
+                <button
+                  key={code}
+                  onClick={() => setLang(code as OwnerLang)}
+                  className={styles.toggleBtn}
+                  aria-label={`Switch language to ${code}`}
+                  title={code}
+                  style={{
+                    fontWeight: code === lang ? 700 : 400,
+                    opacity: code === lang ? 1 : 0.55,
+                    padding: '4px 8px',
+                  }}
+                >
+                  {code}
+                </button>
+              ))}
+            </div>
             <button
               onClick={() => router.push('/')}
               className={styles.visitBtn}
-              title="Visit public website"
+              title={t.visitSite}
             >
               🌐
             </button>
