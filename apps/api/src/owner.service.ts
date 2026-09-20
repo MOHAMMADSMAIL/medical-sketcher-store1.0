@@ -81,7 +81,8 @@ export class OwnerService {
         price: data.price,
         currency: data.currency,
         status: data.status || 'DRAFT',
-        authorId: data.authorId,
+        type: data.type || 'book',
+        authorId: data.authorId || null,
         categoryId: data.categoryId,
       },
       include: { author: true, category: true },
@@ -92,12 +93,14 @@ export class OwnerService {
     return this.prisma.product.update({
       where: { id },
       data: {
-        title: data.title,
-        slug: data.slug,
-        description: data.description,
-        price: data.price,
-        currency: data.currency,
-        status: data.status,
+        ...(data.title !== undefined ? { title: data.title } : {}),
+        ...(data.slug !== undefined ? { slug: data.slug } : {}),
+        ...(data.description !== undefined ? { description: data.description } : {}),
+        ...(data.price !== undefined ? { price: data.price } : {}),
+        ...(data.currency !== undefined ? { currency: data.currency } : {}),
+        ...(data.status !== undefined ? { status: data.status } : {}),
+        ...(data.type !== undefined ? { type: data.type } : {}),
+        ...(data.authorId !== undefined ? { authorId: data.authorId || null } : {}),
       },
       include: { author: true, category: true },
     });
@@ -149,6 +152,9 @@ export class OwnerService {
         mimeType: file.mimetype,
         size: file.size,
         originalName: file.originalname,
+        // Persist the caller-declared kind ('book' | 'cover' | ...) so product
+        // images can be selected separately from protected deliverables.
+        type: fileType,
         isPrimary: fileType === 'book',
       },
     });

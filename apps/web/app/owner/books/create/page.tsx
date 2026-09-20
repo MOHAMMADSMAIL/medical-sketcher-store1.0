@@ -20,10 +20,11 @@ export default function CreateBookPage() {
   const [status, setStatus] = useState('DRAFT');
   const [authors, setAuthors] = useState<{ id: string; name: string }[]>([]);
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+  const [productType, setProductType] = useState('book');
   const [authorId, setAuthorId] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [bookFile, setBookFile] = useState<File | null>(null);
-  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [coverFiles, setCoverFiles] = useState<File[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -53,8 +54,12 @@ export default function CreateBookPage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!title.trim() || !authorId || !categoryId) {
-      setError('Title, author and category are required.');
+    if (!title.trim() || !categoryId) {
+      setError('Title and category are required.');
+      return;
+    }
+    if (productType === 'book' && !authorId) {
+      setError('Author is required for book products.');
       return;
     }
     try {
@@ -65,14 +70,18 @@ export default function CreateBookPage() {
         description: description.trim(),
         price: Number(price) || 0,
         status,
-        authorId,
+        type: productType,
+        ...(authorId ? { authorId } : {}),
         categoryId,
       });
       if (bookFile) await ownerAPI.uploadBookFile(book.id, bookFile, 'book');
-      if (coverFile) await ownerAPI.uploadBookFile(book.id, coverFile, 'cover');
+      for (const [index, image] of coverFiles.entries()) {
+        await ownerAPI.uploadBookFile(book.id, image, 'cover');
+        if (index === 0) continue; // first image keeps isPrimary via server logic
+      }
       router.push('/owner/books');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not create the book');
+      setError(err instanceof Error ? err.message : 'Could not create the product');
       setSaving(false);
     }
   };
@@ -81,7 +90,7 @@ export default function CreateBookPage() {
     <OwnerLayout user={user}>
       <div className={styles.container}>
         <div className={styles.header}>
-          <h1>Create a New Book</h1>
+          <h1>Create a New Product</h1>
         </div>
         {error && <div className={styles.error || styles.empty}>{error}</div>}
         <form onSubmit={submit} className={styles.toolbar || ''} style={{ display: 'grid', gap: 14, maxWidth: 560 }}>
@@ -117,10 +126,22 @@ export default function CreateBookPage() {
             </label>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+            <div style={{ display: 'grid', gap: 6 }}>
+              Product type *
+              <div style={{ display: 'flex', gap: 8 }}>
+                {['book', 'merch'].map((t) => (
+                  <button key={t} type="button" onClick={() => setProductType(t)}
+                    style={{ cursor: 'pointer', borderRadius: 999, padding: '8px 16px', border: productType === t ? '1.5px solid #536044' : '1px solid rgba(83,96,68,.25)', background: productType === t ? '#e6e5d4' : 'transparent', fontWeight: 600 }}>
+                    {t === 'book' ? 'Book (PDF/EPUB)' : 'General product (merch, cups…)'}
+                  </button>
+                ))}
+              </div>
+            </div>
             <label style={{ display: 'grid', gap: 6 }}>
-              Author *
-              <select value={authorId} onChange={(e) => setAuthorId(e.target.value)} required
+              Author {productType === 'book' ? '*' : '(optional)'}
+              <select value={authorId} onChange={(e) => setAuthorId(e.target.value)} required={productType === 'book'}
                 style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid rgba(83,96,68,.25)', background: '#fffa' }}>
+                <option value="">— none —</option>
                 {authors.map((author) => <option key={author.id} value={author.id}>{author.name}</option>)}
               </select>
             </label>
@@ -132,14 +153,16 @@ export default function CreateBookPage() {
               </select>
             </label>
           </div>
+          {productType === 'book' && (
+            <label style={{ display: 'grid', gap: 6 }}>
+              Book file (PDF/EPUB — uploaded right after creation)
+              <input type="file" accept=".pdf,.epub,application/pdf,application/epub+zip" onChange={(e) => setBookFile(e.target.files?.[0] || null)}
+                style={{ padding: '8px', borderRadius: 8, border: '1px solid rgba(83,96,68,.25)', background: '#fffa' }} />
+            </label>
+          )}
           <label style={{ display: 'grid', gap: 6 }}>
-            Book file (PDF/EPUB — uploaded right after creation)
-            <input type="file" accept=".pdf,.epub,application/pdf,application/epub+zip" onChange={(e) => setBookFile(e.target.files?.[0] || null)}
-              style={{ padding: '8px', borderRadius: 8, border: '1px solid rgba(83,96,68,.25)', background: '#fffa' }} />
-          </label>
-          <label style={{ display: 'grid', gap: 6 }}>
-            Cover image (PNG/JPG)
-            <input type="file" accept="image/png,image/jpeg" onChange={(e) => setCoverFile(e.target.files?.[0] || null)}
+            Product images (PNG/JPG — first one is the cover; multiple allowed)
+            <input type="file" accept="image/png,image/jpeg" multiple onChange={(e) => setCoverFiles(Array.from(e.target.files || []))}
               style={{ padding: '8px', borderRadius: 8, border: '1px solid rgba(83,96,68,.25)', background: '#fffa' }} />
           </label>
           <div style={{ display: 'flex', gap: 10 }}>

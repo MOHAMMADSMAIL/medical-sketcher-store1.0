@@ -107,9 +107,11 @@ model Product {
   currency    String               @default("USD")
   status      ProductStatus        @default(DRAFT)
   archivedAt  DateTime?
-  authorId    String
+  /// Generalizes Product beyond books: 'book' | 'merch' | ... (free-form on purpose)
+  type        String               @default("book")
+  authorId    String?
   categoryId  String
-  author      Author               @relation(fields: [authorId], references: [id])
+  author      Author?              @relation(fields: [authorId], references: [id])
   category    Category             @relation(fields: [categoryId], references: [id])
   cartItems   CartItem[]
   orderItems  OrderItem[]

@@ -25,7 +25,10 @@ export class CreateBookDto {
   @IsNumber() @Min(0) price!: number;
   @IsOptional() @IsString() currency?: string;
   @IsOptional() @IsIn(PRODUCT_STATUSES) status?: (typeof PRODUCT_STATUSES)[number];
-  @IsString() @IsNotEmpty() authorId!: string;
+  /** Generalized product kind: 'book' (default) | 'merch' | ... (free-form). */
+  @IsOptional() @IsString() type?: string;
+  /** Optional now: non-book products (e.g. merch) do not need an author. */
+  @IsOptional() @IsString() authorId?: string;
   @IsString() @IsNotEmpty() categoryId!: string;
 }
 
@@ -36,6 +39,8 @@ export class UpdateBookDto {
   @IsOptional() @IsNumber() @Min(0) price?: number;
   @IsOptional() @IsString() currency?: string;
   @IsOptional() @IsIn(PRODUCT_STATUSES) status?: (typeof PRODUCT_STATUSES)[number];
+  @IsOptional() @IsString() type?: string;
+  @IsOptional() @IsString() authorId?: string;
 }
 
 export class CreateAuthorDto {
