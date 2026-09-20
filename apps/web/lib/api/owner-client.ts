@@ -143,6 +143,7 @@ class OwnerAPIClient {
   // Orders
   async getOrders(page = 1, limit = 10, filters?: any) {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (filters?.status) params.append('status', filters.status);
     if (filters?.paymentStatus) params.append('paymentStatus', filters.paymentStatus);
     if (filters?.orderStatus) params.append('orderStatus', filters.orderStatus);
     return this.fetchWithAuth(`/owner/orders?${params.toString()}`);
@@ -164,8 +165,8 @@ class OwnerAPIClient {
   }
 
   async updateUserRole(id: string, role: string) {
-    return this.fetchWithAuth(`/owner/users/${id}/role`, {
-      method: 'PUT',
+    return this.fetchWithAuth(`/owner/users/${id}`, {
+      method: 'PATCH',
       body: JSON.stringify({ role }),
     });
   }

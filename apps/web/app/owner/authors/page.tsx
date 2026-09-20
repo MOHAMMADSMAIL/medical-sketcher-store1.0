@@ -21,6 +21,7 @@ export default function AuthorsPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ name: '', slug: '', bio: '' });
 
   useEffect(() => {
@@ -43,13 +44,24 @@ export default function AuthorsPage() {
   const handleCreateAuthor = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await ownerAPI.createAuthor(formData);
+      if (editingId) {
+        await ownerAPI.updateAuthor(editingId, formData);
+        setEditingId(null);
+      } else {
+        await ownerAPI.createAuthor(formData);
+      }
       setFormData({ name: '', slug: '', bio: '' });
       setShowForm(false);
       fetchAuthors();
     } catch (err) {
-      console.error('Failed to create author:', err);
+      console.error('Failed to save author:', err);
     }
+  };
+
+  const startEdit = (author: Author) => {
+    setEditingId(author.id);
+    setFormData({ name: author.name, slug: author.slug, bio: author.bio || '' });
+    setShowForm(true);
   };
 
   const handleDeleteAuthor = async (id: string) => {
@@ -70,7 +82,7 @@ export default function AuthorsPage() {
       <div className={styles.container}>
         <div className={styles.header}>
           <h1>Authors Management</h1>
-          <button onClick={() => setShowForm(!showForm)} className={styles.addButton}>
+          <button onClick={() => { setShowForm(!showForm); if (showForm) setEditingId(null); }} className={styles.addButton}>
             {showForm ? '✕ Cancel' : '+ Add Author'}
           </button>
         </div>
@@ -120,7 +132,7 @@ export default function AuthorsPage() {
                 <p className={styles.meta}>{author.products?.length || 0} books</p>
                 {author.bio && <p className={styles.bio}>{author.bio}</p>}
                 <div className={styles.actions}>
-                  <button className={styles.editBtn}>Edit</button>
+                  <button className={styles.editBtn} onClick={() => startEdit(author)}>Edit</button>
                   <button
                     onClick={() => handleDeleteAuthor(author.id)}
                     className={styles.deleteBtn}

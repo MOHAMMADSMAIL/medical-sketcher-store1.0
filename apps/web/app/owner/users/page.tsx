@@ -19,6 +19,9 @@ export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [error, setError] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [newRole, setNewRole] = useState('CUSTOMER');
 
   useEffect(() => {
     if (!isOwner) return;
@@ -28,12 +31,24 @@ export default function UsersPage() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
+      setError('');
       const data = await ownerAPI.getUsers(1, 20, search || undefined);
       setUsers(data.items);
     } catch (err) {
-      console.error('Failed to load users:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load users');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRoleSave = async (id: string) => {
+    try {
+      setError('');
+      await ownerAPI.updateUserRole(id, newRole);
+      setEditingId(null);
+      fetchUsers();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update role');
     }
   };
 
@@ -44,6 +59,8 @@ export default function UsersPage() {
     <OwnerLayout user={user}>
       <div className={styles.container}>
         <h1>Users Management</h1>
+
+        {error && <div role="alert" style={{ color: '#b91c1c', margin: '12px 0' }}>{error}</div>}
 
         <input
           type="text"
@@ -60,15 +77,13 @@ export default function UsersPage() {
         ) : (
           <div className={styles.table}>
             <table>
-              <thead>
-                <tr>
-                  <th>Email</th>
-                  <th>Name</th>
-                  <th>Role</th>
-                  <th>Orders</th>
-                  <th>Registered</th>
-                  <th>Actions</th>
-                </tr>
+              <thead>                  <tr>
+                    <th>Email</th>
+                    <th>Name</th>
+                    <th>Role</th>
+                    <th>Registered</th>
+                    <th>Actions</th>
+                  </tr>
               </thead>
               <tbody>
                 {users.map((u) => (
@@ -80,10 +95,26 @@ export default function UsersPage() {
                         {u.role}
                       </span>
                     </td>
-                    <td>{u.orders?.length || 0}</td>
                     <td>{new Date(u.createdAt).toLocaleDateString()}</td>
                     <td>
-                      <button className={styles.viewBtn}>View</button>
+                      {editingId === u.id ? (
+                        <span style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
+                          <select value={newRole} onChange={(e) => setNewRole(e.target.value)}>
+                            <option value="CUSTOMER">CUSTOMER</option>
+                            <option value="ADMIN">ADMIN</option>
+                            <option value="OWNER">OWNER</option>
+                          </select>
+                          <button className={styles.viewBtn} onClick={() => handleRoleSave(u.id)}>Save</button>
+                          <button className={styles.viewBtn} onClick={() => setEditingId(null)}>Cancel</button>
+                        </span>
+                      ) : (
+                        <button
+                          className={styles.viewBtn}
+                          onClick={() => { setEditingId(u.id); setNewRole(u.role); }}
+                        >
+                          Change role
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
