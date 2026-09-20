@@ -75,14 +75,28 @@ function errorPayloads(): Array<Record<string, any>> {
 }
 
 beforeAll(async () => {
-  // Keep the suite repeatable on a persistent shared database: ensure a published
-  // product exists (prior runs may have left everything archived/draft).
+  // Self-sufficient suite: ALWAYS create its own published product instead of
+  // mutating whatever happens to be in the shared database (root fix: the suite
+  // must never depend on seed data — the demo catalog was removed on purpose).
   const db = new PrismaClient({ datasources: { db: { url: DATABASE_URL } } });
-  const anyPublished = await db.product.findFirst({ where: { status: 'PUBLISHED' } });
-  if (!anyPublished) {
-    const candidate = await db.product.findFirst({ orderBy: { createdAt: 'asc' } });
-    if (candidate) await db.product.update({ where: { id: candidate.id }, data: { status: 'PUBLISHED' } });
+  const anyCategory = await db.category.findFirst({ orderBy: { name: 'asc' } });
+  if (!anyCategory) {
+    await db.category.create({ data: { name: 'Test', slug: 'cefr-test-fallback' } });
   }
+  const category = await db.category.findFirstOrThrow({ orderBy: { name: 'asc' } });
+  await db.product.upsert({
+    where: { slug: 'e2e-self-made-book' },
+    update: { status: 'PUBLISHED' },
+    create: {
+      title: 'E2E Self-Made Book',
+      slug: 'e2e-self-made-book',
+      description: 'Created by the integration suite itself; safe to delete.',
+      price: 9.9,
+      status: 'PUBLISHED',
+      type: 'book',
+      categoryId: category.id,
+    },
+  });
   await db.$disconnect();
 
   mockRedis = createServer((req, res) => {

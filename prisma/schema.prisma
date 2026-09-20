@@ -110,6 +110,8 @@ model Product {
   archivedAt  DateTime?
   /// Generalizes Product beyond books: 'book' | 'merch' | ... (free-form on purpose)
   type        String               @default("book")
+  /// CEFR level this product teaches (A1..C2) — null for non-language items
+  level       String?
   authorId    String?
   categoryId  String
   author      Author?              @relation(fields: [authorId], references: [id])

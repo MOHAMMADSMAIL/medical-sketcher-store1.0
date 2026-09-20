@@ -1,10 +1,11 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import StoreChrome from '@/components/store/StoreChrome';
 import BookCard, { type Book } from '@/components/store/BookCard';
 import { useStore } from '@/components/store/StoreProvider';
+import { API_URL } from '@/lib/api';
 
 export default function ShopClient({ products }: { products: Book[] }) {
   const params = useSearchParams();
@@ -13,7 +14,19 @@ export default function ShopClient({ products }: { products: Book[] }) {
   const category = params.get('category') || '';
   const author = params.get('author') || '';
   const level = params.get('level') || '';
-  const categories = useMemo(() => Array.from(new Set(products.map((p) => (typeof p.category === 'string' ? p.category : p.category?.name)).filter(Boolean))) as string[], [products]);
+  // Store sections come from the API taxonomy (all CEFR levels + custom sections),
+  // so empty sections still show up as browsable filters.
+  const [apiCategories, setApiCategories] = useState<string[]>([]);
+  useEffect(() => {
+    let alive = true;
+    fetch(`${API_URL}/api/categories`)
+      .then((res) => (res.ok ? res.json() : []))
+      .then((rows: { name: string }[]) => { if (alive) setApiCategories(rows.map((row) => row.name)); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
+  const productCategories = useMemo(() => Array.from(new Set(products.map((p) => (typeof p.category === 'string' ? p.category : p.category?.name)).filter(Boolean))) as string[], [products]);
+  const categories = useMemo(() => Array.from(new Set([...productCategories, ...apiCategories])), [productCategories, apiCategories]);
   const authors = useMemo(() => Array.from(new Set(products.map((p) => (typeof p.author === 'string' ? p.author : p.author?.name)).filter(Boolean))) as string[], [products]);
   const filtered = products.filter((book) => {
     const hay = `${book.title} ${typeof book.author === 'string' ? book.author : book.author?.name} ${typeof book.category === 'string' ? book.category : book.category?.name}`.toLowerCase();
@@ -32,7 +45,7 @@ export default function ShopClient({ products }: { products: Book[] }) {
         <p className="text-xs font-bold uppercase tracking-[.2em] text-[#777c60]">The bookshelf</p>
         <h1 className="serif mt-3 text-5xl lg:text-7xl">{t.featured}</h1>
         <form className="mt-8 flex flex-wrap gap-3">
-          <input name="search" defaultValue={search} placeholder="Search books…" className="min-w-60 flex-1 rounded-full border border-[#2c3325]/15 bg-white/70 px-5 py-3 text-sm outline-none" />
+          <input name="search" defaultValue={params.get('search') || params.get('q') || ''} placeholder="Search books…" className="min-w-60 flex-1 rounded-full border border-[#2c3325]/15 bg-white/70 px-5 py-3 text-sm outline-none" />
           <select name="category" defaultValue={category} className="rounded-full border border-[#2c3325]/15 bg-white/70 px-4 py-3 text-sm">
             <option value="">All categories</option>
             {categories.map((item) => <option key={item}>{item}</option>)}
