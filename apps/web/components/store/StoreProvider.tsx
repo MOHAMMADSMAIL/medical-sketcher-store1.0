@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { api, ApiError } from '@/lib/api';
 import { copy, type Lang } from '@/lib/i18n';
 
-type User = { id: string; email: string; name?: string | null; role: string } | null;
+type User = { id: string; email: string; name?: string | null; role: string; phoneNumber?: string | null; phoneVerifiedAt?: string | null } | null;
 type Cart = { items: any[]; subtotal: number; currency: string } | null;
 
 type StoreContextValue = {

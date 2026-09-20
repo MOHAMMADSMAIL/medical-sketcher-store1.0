@@ -166,7 +166,7 @@ export class OwnerController {
     const [items, total] = await Promise.all([
       this.prisma.user.findMany({
         where,
-        select: { id: true, email: true, name: true, role: true, createdAt: true },
+        select: { id: true, email: true, name: true, role: true, phoneNumber: true, googleId: true, createdAt: true },
         orderBy: { createdAt: 'desc' },
         skip,
         take,

@@ -311,6 +311,8 @@ export class OwnerService {
           email: true,
           name: true,
           role: true,
+          phoneNumber: true,
+          googleId: true,
           createdAt: true,
           orders: { select: { id: true } },
         },

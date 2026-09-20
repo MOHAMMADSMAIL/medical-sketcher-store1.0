@@ -10,6 +10,8 @@ interface User {
   email: string;
   name?: string;
   role: string;
+  phoneNumber?: string | null;
+  googleId?: string | null;
   createdAt: string;
   orders?: any[];
 }
@@ -80,6 +82,7 @@ export default function UsersPage() {
               <thead>                  <tr>
                     <th>Email</th>
                     <th>Name</th>
+                    <th>Phone</th>
                     <th>Role</th>
                     <th>Registered</th>
                     <th>Actions</th>
@@ -90,6 +93,13 @@ export default function UsersPage() {
                   <tr key={u.id}>
                     <td>{u.email}</td>
                     <td>{u.name || '-'}</td>
+                    <td>
+                      {u.phoneNumber ? (
+                        <span>{u.phoneNumber}{u.googleId ? ' · G' : ''}</span>
+                      ) : (
+                        <span style={{ opacity: 0.4 }}>-</span>
+                      )}
+                    </td>
                     <td>
                       <span className={`${styles.badge} ${styles[u.role.toLowerCase()]}`}>
                         {u.role}

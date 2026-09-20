@@ -55,6 +55,11 @@ model User {
   createdAt       DateTime             @default(now())
   updatedAt       DateTime             @updatedAt
   sessions        Session[]
+  /// Task 7: phone + Google identity (customers only)
+  googleId        String?  @unique
+  phoneNumber     String?  @unique
+  phoneVerifiedAt DateTime?
+  phoneVerifications PhoneVerificationToken[]
   cart            Cart?
   orders          Order[]
   wishlist        WishlistItem[]
@@ -64,6 +69,20 @@ model User {
   analyticsEvents AnalyticsEvent[]
   passwordResetTokens PasswordResetToken[]
   examAttempts        ExamAttempt[]
+}
+
+model PhoneVerificationToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// sha256 of the 6-digit code — raw code is never stored
+  codeHash  String    @unique
+  /// LOGIN (phone-first sign-in) | VERIFY (attach phone to an existing account)
+  purpose   String    @default("LOGIN")
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  @@index([userId])
 }
 
 model PasswordResetToken {

@@ -43,7 +43,11 @@ export class AuthService {
   }
   async fromToken(raw?: string) {
     if (!raw) return null;
-    const session = await this.prisma.session.findUnique({ where: { tokenHash: hash(raw) }, include: { user: true } });
+    // Explicit safe fields: never leak passwordHash through /auth/me or guards.
+    const session = await this.prisma.session.findUnique({
+      where: { tokenHash: hash(raw) },
+      select: { expiresAt: true, id: true, user: { select: { id: true, email: true, name: true, role: true, googleId: true, phoneNumber: true, phoneVerifiedAt: true, createdAt: true } } },
+    });
     if (!session || session.expiresAt < new Date()) { if (session) await this.prisma.session.delete({ where: { id: session.id } }); return null; }
     return session.user;
   }

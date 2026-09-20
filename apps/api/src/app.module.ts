@@ -21,6 +21,8 @@ import { RolesGuard } from './roles.guard';
 import { OwnerController } from './owner.controller';
 import { CategoriesController } from './categories.controller';
 import { ExamsController } from './exams.controller';
+import { GoogleAuthController } from './google-auth.controller';
+import { PhoneAuthController } from './phone-auth.controller';
 import { OwnerService } from './owner.service';
 import { LearningContentController } from './learning-content.controller';
 import { DownloadService } from './download.service';
@@ -31,7 +33,7 @@ export class DatabaseModule {}
 
 @Module({
   imports: [DatabaseModule],
-  controllers: [ProductsController, CategoriesController, AuthController, CartController, OrdersController, PaymentController, LibraryController, WishlistController, ReviewsController, CmsController, ObservabilityController, OwnerController, LearningContentController, DownloadController, ExamsController],
+  controllers: [ProductsController, CategoriesController, AuthController, GoogleAuthController, PhoneAuthController, CartController, OrdersController, PaymentController, LibraryController, WishlistController, ReviewsController, CmsController, ObservabilityController, OwnerController, LearningContentController, DownloadController, ExamsController],
   providers: [ProductsService, AuthService, AuthGuard, CartService, OrdersService, PaymentService, LibraryService, RolesGuard, OwnerService, DownloadService],
 })
 export class AppModule {}
