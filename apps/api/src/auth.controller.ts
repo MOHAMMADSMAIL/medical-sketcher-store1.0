@@ -6,6 +6,7 @@ import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
 class Credentials { @IsOptional() @IsEmail() email?: string; @IsOptional() @IsString() identifier?: string; @IsString() @MinLength(8) password!: string; @IsOptional() @IsString() name?: string; }
 class PasswordResetRequest { @IsEmail() email!: string; }
 class PasswordReset { @IsString() token!: string; @IsString() @MinLength(8) password!: string; }
+class ChangePassword { @IsString() currentPassword!: string; @IsString() @MinLength(8) newPassword!: string; }
 @Controller('auth')
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
@@ -17,4 +18,12 @@ export class AuthController {
   @Post('logout') async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) { await this.auth.logout(req.cookies?.[process.env.AUTH_COOKIE_NAME || 'aurelia_session']); res.clearCookie(process.env.AUTH_COOKIE_NAME || 'aurelia_session'); return { success: true }; }
   @Post('password-reset/request') async requestReset(@Body() body: PasswordResetRequest) { await this.auth.requestPasswordReset(body.email); return { success: true }; }
   @Post('password-reset/confirm') async confirmReset(@Body() body: PasswordReset) { await this.auth.resetPassword(body.token, body.password); return { success: true }; }
+  @UseGuards(AuthGuard)
+  @Post('change-password') async changePassword(@Req() req: Request & { user: { id: string } }, @Body() body: ChangePassword, @Res({ passthrough: true }) res: Response) {
+    await this.auth.changePassword(req.user.id, body.currentPassword, body.newPassword);
+    // All sessions were invalidated — clear the caller's cookie so the next
+    // request is honestly unauthenticated instead of failing on a dead session.
+    res.clearCookie(process.env.AUTH_COOKIE_NAME || 'aurelia_session');
+    return { success: true };
+  }
 }

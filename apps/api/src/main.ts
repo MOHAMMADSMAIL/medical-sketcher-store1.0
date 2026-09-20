@@ -2,11 +2,20 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
+import { config as loadDotenv } from 'dotenv';
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { AppModule } from './app.module';
 import { rateLimit } from './rate-limit';
 import { csrfProtection } from './csrf';
 import { captureError, MonitoringExceptionFilter } from './error-monitoring';
 import { PrismaService } from './prisma.service';
+
+// Load the repo-root .env (single source of truth for local/dev/run).
+// Real env vars still win: dotenv never overrides variables that are already set.
+// Works from apps/api (dev/watch/start) or dist (direct node invocation).
+const envPath = [resolve(process.cwd(), '../.env'), resolve(process.cwd(), '../../.env')].find(existsSync);
+if (envPath) loadDotenv({ path: envPath });
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);

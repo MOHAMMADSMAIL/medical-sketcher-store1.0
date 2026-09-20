@@ -99,6 +99,7 @@ export default function OwnerStudio() {
       {tab === 'analytics' && <Analytics data={analytics} />}
       {tab === 'audit' && <Audit data={audit} />}
       {tab === 'settings' && <Settings onSave={async (key, value) => { await request(`/settings/${key}`, { method: 'PUT', body: JSON.stringify({ value }) }); setMessage('Settings saved'); }} />}
+      {tab === 'settings' && <ChangePassword />}
     </section>
   </main>;
 }
@@ -123,6 +124,25 @@ function Pages({ pages, selected, onSelect, onPublish }: { pages: Page[]; select
 function Analytics({ data }: { data: any[] }) { const max = Math.max(...data.map((item) => item._count?._all || 0), 1); return <div className="content"><div className="section-toolbar"><div><span className="eyebrow">SIGNALS & MOMENTUM</span><h2>Analytics</h2></div><span className="soft-badge">Live from API</span></div><section className="panel chart-panel">{data.map((item) => <div className="bar-row" key={item.name}><span>{item.name}</span><div><i style={{ width: `${((item._count?._all || 0) / max) * 100}%` }} /></div><b>{item._count?._all || 0}</b></div>)}{!data.length && <Empty text="Analytics events will appear as your store grows" />}</section></div>; }
 function Audit({ data }: { data: any[] }) { return <div className="content"><div className="section-toolbar"><div><span className="eyebrow">ACCOUNTABILITY</span><h2>Activity Log</h2></div></div><section className="panel audit-list">{data.map((item) => <div className="audit-row" key={item.id}><span className="audit-dot" /><div><b>{item.action}</b><small>{item.entity}{item.entityId ? ` · ${item.entityId}` : ''}</small></div><time>{new Date(item.createdAt).toLocaleString()}</time></div>)}{!data.length && <Empty text="No activity recorded yet" />}</section></div>; }
 function Settings({ onSave }: { onSave: (key: string, value: unknown) => Promise<void> }) { const [value, setValue] = useState('#536044'); return <div className="content"><div className="section-toolbar"><div><span className="eyebrow">STORE CONFIGURATION</span><h2>Settings</h2></div><button className="primary" onClick={() => void onSave('theme', { accent: value })}>Save settings</button></div><section className="panel settings-panel"><label>Theme accent<div className="color-row"><input type="color" value={value} onChange={(e) => setValue(e.target.value)} /><code>{value}</code></div></label><label>Instagram handle<input defaultValue="@medical.sketcher" /></label><label>Default language<select defaultValue="en"><option value="en">English</option><option value="de">Deutsch</option><option value="ar">العربية</option></select></label><p className="muted">Settings are stored through the Owner API and can be extended without changing the public storefront components.</p></section></div>; }
+function ChangePassword() {
+  const [current, setCurrent] = useState(''); const [next, setNext] = useState(''); const [confirm, setConfirm] = useState('');
+  const [msg, setMsg] = useState(''); const [err, setErr] = useState('');
+  return <section className="panel settings-panel" style={{ marginTop: 16 }}>
+    <span className="eyebrow">SECURITY</span>
+    <h3>Change password</h3>
+    {msg && <p className="muted" style={{ color: '#536044' }}>✓ {msg}</p>}
+    {err && <p className="muted" style={{ color: '#b91c1c' }}>! {err}</p>}
+    <label>Current password<input type="password" value={current} onChange={(e) => setCurrent(e.target.value)} autoComplete="current-password" /></label>
+    <label>New password (min 8 characters)<input type="password" value={next} onChange={(e) => setNext(e.target.value)} autoComplete="new-password" /></label>
+    <label>Confirm new password<input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" /></label>
+    <button className="primary" onClick={async () => {
+      setMsg(''); setErr('');
+      if (next !== confirm) { setErr('New passwords do not match'); return; }
+      try { const { api } = await import('@/lib/api'); await api('/auth/change-password', { method: 'POST', body: JSON.stringify({ currentPassword: current, newPassword: next }) }); setMsg('Password changed — please sign in again.'); setCurrent(''); setNext(''); setConfirm(''); setTimeout(() => { window.location.href = '/owner/login'; }, 1200); }
+      catch (e) { setErr(e instanceof Error ? e.message : 'Could not change password'); }
+    }}>Update password</button>
+  </section>;
+}
 function Empty({ text }: { text: string }) { return <div className="empty">{text}</div>; }
 
 const styles = `

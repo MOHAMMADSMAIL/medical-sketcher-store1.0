@@ -15,12 +15,14 @@ export class AuthService {
     const password = process.env.OWNER_PASSWORD;
     if (!username || !password) return null;
     if (password.length < 8) throw new Error('OWNER_PASSWORD must be at least 8 characters');
+    const email = this.ownerEmail();
+    // Bootstrap only: create the single owner account if it does not exist yet.
+    // NEVER overwrite an existing owner — their password may have been changed
+    // from the dashboard (change-password) and env holds only the initial secret.
+    const existing = await this.prisma.user.findUnique({ where: { email } });
+    if (existing) return existing;
     const passwordHash = await bcrypt.hash(password, 12);
-    return this.prisma.user.upsert({
-      where: { email: this.ownerEmail() },
-      update: { name: username, role: 'OWNER', passwordHash },
-      create: { email: this.ownerEmail(), name: username, role: 'OWNER', passwordHash },
-    });
+    return this.prisma.user.create({ data: { email, name: username, role: 'OWNER', passwordHash } });
   }
   async register(email: string, password: string, name?: string) {
     if (password.length < 8) throw new BadRequestException('Password must be at least 8 characters');
@@ -46,6 +48,20 @@ export class AuthService {
     return session.user;
   }
   async logout(raw?: string) { if (raw) await this.prisma.session.deleteMany({ where: { tokenHash: hash(raw) } }); }
+
+  async changePassword(userId: string, currentPassword: string, newPassword: string) {
+    if (!currentPassword || !newPassword) throw new BadRequestException('Current and new password are required');
+    if (newPassword.length < 8) throw new BadRequestException('New password must be at least 8 characters');
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user || !(await bcrypt.compare(currentPassword, user.passwordHash))) throw new UnauthorizedException('Current password is incorrect');
+    const passwordHash = await bcrypt.hash(newPassword, 12);
+    await this.prisma.$transaction([
+      this.prisma.user.update({ where: { id: userId }, data: { passwordHash } }),
+      // Invalidate every session: a password change must end all logins.
+      this.prisma.session.deleteMany({ where: { userId } }),
+    ]);
+    return { success: true };
+  }
   async requestPasswordReset(email: string) {
     const user = await this.prisma.user.findUnique({ where: { email: email.trim().toLowerCase() } });
     if (!user) return;
