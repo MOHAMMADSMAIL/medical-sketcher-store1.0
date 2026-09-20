@@ -12,7 +12,7 @@ import { useStore } from '@/components/store/StoreProvider';
 const hero = '/theme/Duck-ai-image-2026-09-15-22-08__5_.jpeg';
 const study = '/theme/medical-sketcher-study-scene.jpg';
 const reader = '/theme/Duck-ai-image-2026-09-15-22-08__3_.jpeg';
-const skills = [['◖', 'Listening', 'Audio lessons & transcripts'], ['▤', 'Reading', 'Passages & comprehension'], ['◌', 'Speaking', 'Guided speaking practice'], ['✎', 'Writing', 'Prompts & corrections']] as const;
+const skills = [['◖', 'Listening', 'Audio lessons & transcripts', 'LISTENING'], ['▤', 'Reading', 'Passages & comprehension', 'READING'], ['◌', 'Speaking', 'Guided speaking practice', 'SPEAKING'], ['✎', 'Writing', 'Prompts & corrections', null]] as const;
 
 export default function HomeView({ products }: { products: Book[] }) {
   const { lang, t, toast, addToCart } = useStore();
@@ -51,13 +51,22 @@ export default function HomeView({ products }: { products: Book[] }) {
               <p className="max-w-sm text-sm leading-6 text-[#66705d]">Keep every part of language learning in one considered place.</p>
             </div>
             <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {skills.map(([icon, title, description]) => (
-                <button key={title} onClick={() => toast(`${title} practice is being prepared.`)} className="group rounded-[1.5rem] border border-[#566149]/12 bg-white/55 p-5 text-left transition hover:-translate-y-1 hover:bg-[#e6e8d9]">
-                  <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[#d9dcc7] text-xl text-[#45523b]">{icon}</span>
-                  <h3 className="serif mt-10 text-2xl">{title}</h3>
-                  <p className="mt-2 text-sm text-[#67705f]">{description}</p>
-                  <span className="mt-6 block text-sm font-semibold text-[#58684a]">Explore ↗</span>
-                </button>
+              {skills.map(([icon, title, description, skillKey]) => (
+                skillKey ? (
+                  <Link key={title} href={`/exams/${skillKey}`} className="group rounded-[1.5rem] border border-[#566149]/12 bg-white/55 p-5 text-left transition hover:-translate-y-1 hover:bg-[#e6e8d9]">
+                    <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[#d9dcc7] text-xl text-[#45523b]">{icon}</span>
+                    <h3 className="serif mt-10 text-2xl">{title}</h3>
+                    <p className="mt-2 text-sm text-[#67705f]">{description}</p>
+                    <span className="mt-6 block text-sm font-semibold text-[#58684a]">{tr(lang, 'Start the exam', 'ابدأ الامتحان', 'Test starten')} ↗</span>
+                  </Link>
+                ) : (
+                  <button key={title} onClick={() => toast(`${title} practice is being prepared.`)} className="group rounded-[1.5rem] border border-[#566149]/12 bg-white/55 p-5 text-left transition hover:-translate-y-1 hover:bg-[#e6e8d9]">
+                    <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[#d9dcc7] text-xl text-[#45523b]">{icon}</span>
+                    <h3 className="serif mt-10 text-2xl">{title}</h3>
+                    <p className="mt-2 text-sm text-[#67705f]">{description}</p>
+                    <span className="mt-6 block text-sm font-semibold text-[#58684a]">Explore ↗</span>
+                  </button>
+                )
               ))}
             </div>
           </div>

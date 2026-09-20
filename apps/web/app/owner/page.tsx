@@ -85,7 +85,7 @@ export default function OwnerStudio() {
       <div className="owner-brand"><span className="brand-orb">MS</span><div><b>MEDICAL<br />SKETCHER</b><small>OWNER STUDIO</small></div></div>
       <div className="workspace-pill"><span className="status-dot" /> Private workspace</div>
       <nav>{nav.map((item) => <button key={item.id} className={tab === item.id ? 'active' : ''} onClick={() => { setTab(item.id); setMessage(''); }}><i>{item.icon}</i>{item.label}</button>)}</nav>
-      <div className="sidebar-bottom"><a href="/">↗ Open public site</a><button onClick={() => { window.location.href = '/login'; }}>↪ Sign out</button></div>
+      <div className="sidebar-bottom"><a href="/owner/exams">资格考试 Exams</a><a href="/">↗ Open public site</a><button onClick={() => { window.location.href = '/login'; }}>↪ Sign out</button></div>
     </aside>
     <section className="owner-main">
       <header className="owner-header"><div><span className="eyebrow">MEDICAL SKETCHER / PRIVATE ACCESS</span><h1>{nav.find((item) => item.id === tab)?.label}</h1></div><div className="header-actions"><button className="ghost" onClick={() => window.open('/', '_blank')}>Preview site ↗</button><div className="owner-avatar">O</div><div><b>Owner</b><small>Administrator</small></div></div></header>

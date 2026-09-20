@@ -63,6 +63,7 @@ model User {
   auditLogs       AuditLog[]
   analyticsEvents AnalyticsEvent[]
   passwordResetTokens PasswordResetToken[]
+  examAttempts        ExamAttempt[]
 }
 
 model PasswordResetToken {
@@ -119,8 +120,9 @@ model Product {
   reviews     Review[]
   permissions DownloadPermission[]
   media       Media[]
-  createdAt   DateTime             @default(now())
-  updatedAt   DateTime             @updatedAt
+  exams       Assessment[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Cart {
@@ -249,6 +251,7 @@ model Media {
   isPrimary    Boolean  @default(false)
   product      Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
   learningContent LearningContent[]
+  assessmentAudio Assessment[] @relation("AssessmentAudio")
   createdAt    DateTime   @default(now())
 }
 
@@ -286,14 +289,41 @@ model Lesson {
 }
 
 model Assessment {
-  id         String   @id @default(cuid())
-  title      String
-  slug       String   @unique
-  questions  Json?
-  passScore  Int      @default(70)
-  status     String   @default("DRAFT")
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id             String   @id @default(cuid())
+  title          String
+  slug           String   @unique
+  questions      Json?
+  passScore      Int      @default(70)
+  status         String   @default("DRAFT")
+  /// Which home-section skill this exam belongs to: LISTENING | READING | SPEAKING
+  skill          String?
+  /// CEFR level this exam targets: A1..C2 (informational, for grouping)
+  level          String?
+  /// Source book the exam content is built from (owner uploads it later)
+  sourceProductId String?
+  sourceProduct  Product? @relation(fields: [sourceProductId], references: [id], onDelete: SetNull)
+  /// Content language of the exam (BCP-47-ish tag, e.g. 'de', 'ar')
+  language       String   @default("de")
+  /// Optional audio attachment for Listening exams (text-to-speech later)
+  audioMediaId   String?
+  audioMedia     Media?   @relation("AssessmentAudio", fields: [audioMediaId], references: [id], onDelete: SetNull)
+  attempts       ExamAttempt[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model ExamAttempt {
+  id           String     @id @default(cuid())
+  assessmentId String
+  assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answers      Json?
+  score        Int?
+  passed       Boolean?
+  createdAt    DateTime   @default(now())
+
+  @@index([assessmentId, userId])
 }
 
 model Page {

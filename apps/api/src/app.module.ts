@@ -19,6 +19,7 @@ import { CmsController } from './cms.controller';
 import { ObservabilityController } from './observability.controller';
 import { RolesGuard } from './roles.guard';
 import { OwnerController } from './owner.controller';
+import { ExamsController } from './exams.controller';
 import { OwnerService } from './owner.service';
 import { LearningContentController } from './learning-content.controller';
 import { DownloadService } from './download.service';
@@ -29,7 +30,7 @@ export class DatabaseModule {}
 
 @Module({
   imports: [DatabaseModule],
-  controllers: [ProductsController, AuthController, CartController, OrdersController, PaymentController, LibraryController, WishlistController, ReviewsController, CmsController, ObservabilityController, OwnerController, LearningContentController, DownloadController],
+  controllers: [ProductsController, AuthController, CartController, OrdersController, PaymentController, LibraryController, WishlistController, ReviewsController, CmsController, ObservabilityController, OwnerController, LearningContentController, DownloadController, ExamsController],
   providers: [ProductsService, AuthService, AuthGuard, CartService, OrdersService, PaymentService, LibraryService, RolesGuard, OwnerService, DownloadService],
 })
 export class AppModule {}
