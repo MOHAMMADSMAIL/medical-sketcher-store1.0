@@ -122,24 +122,58 @@ export class OwnerController {
   @Post('assessments/:id/publish')
   publishAssessment(@Param('id') id: string) { return this.owner.publishAssessment(id); }
 
+  @Delete('lessons/:id')
+  async deleteLesson(@Req() req: Request & { user: { id: string } }, @Param('id') id: string) {
+    const existing = await this.prisma.lesson.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException('Lesson not found');
+    const deleted = await this.owner.deleteLesson(id);
+    await this.owner.createAuditLog(req.user.id, 'delete', 'Lesson', id, { title: deleted.title });
+    return { deleted: true, id };
+  }
+
+  @Delete('assessments/:id')
+  async deleteAssessment(@Req() req: Request & { user: { id: string } }, @Param('id') id: string) {
+    const existing = await this.prisma.assessment.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException('Assessment not found');
+    const deleted = await this.owner.deleteAssessment(id);
+    await this.owner.createAuditLog(req.user.id, 'delete', 'Assessment', id, { title: deleted.title });
+    return { deleted: true, id };
+  }
+
   @Get('orders')
-  ownerOrders(@Query('search') search?: string) {
-    return this.prisma.order.findMany({
-      where: search ? { OR: [{ id: { contains: search } }, { user: { email: { contains: search } } }] } : undefined,
-      include: { user: true, items: { include: { product: true } }, payments: true },
-      orderBy: { createdAt: 'desc' },
-      take: 80,
-    });
+  async ownerOrders(@Query('page') page = '1', @Query('limit') limit = '20', @Query('status') status?: string) {
+    const take = Math.min(Number(limit) || 20, 100);
+    const skip = ((Number(page) || 1) - 1) * take;
+    const where = status ? { status: status as any } : undefined;
+    const [items, total] = await Promise.all([
+      this.prisma.order.findMany({
+        where,
+        include: { user: true, items: { include: { product: true } }, payments: true },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take,
+      }),
+      this.prisma.order.count({ where }),
+    ]);
+    return { items, pagination: { page: Number(page) || 1, limit: take, total, pages: Math.ceil(total / take) } };
   }
 
   @Get('users')
-  ownerUsers(@Query('search') search?: string) {
-    return this.prisma.user.findMany({
-      where: search ? { OR: [{ email: { contains: search } }, { name: { contains: search } }] } : undefined,
-      select: { id: true, email: true, name: true, role: true, createdAt: true },
-      orderBy: { createdAt: 'desc' },
-      take: 80,
-    });
+  async ownerUsers(@Query('page') page = '1', @Query('limit') limit = '20', @Query('search') search?: string) {
+    const take = Math.min(Number(limit) || 20, 100);
+    const skip = ((Number(page) || 1) - 1) * take;
+    const where = search ? { OR: [{ email: { contains: search } }, { name: { contains: search } }] } : undefined;
+    const [items, total] = await Promise.all([
+      this.prisma.user.findMany({
+        where,
+        select: { id: true, email: true, name: true, role: true, createdAt: true },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take,
+      }),
+      this.prisma.user.count({ where }),
+    ]);
+    return { items, pagination: { page: Number(page) || 1, limit: take, total, pages: Math.ceil(total / take) } };
   }
 
   @Patch('users/:id')
@@ -215,9 +249,27 @@ export class OwnerController {
     return updated;
   }
 
+  @Post('products/:id/archive')
+  async archiveProduct(@Req() req: Request & { user: { id: string } }, @Param('id') id: string) {
+    const archived = await this.owner.archiveBook(id);
+    await this.owner.createAuditLog(req.user.id, 'archive', 'Product', id, { title: archived.title });
+    return archived;
+  }
+
+  @Post('products/:id/restore')
+  async restoreProduct(@Req() req: Request & { user: { id: string } }, @Param('id') id: string) {
+    const restored = await this.owner.restoreBook(id);
+    await this.owner.createAuditLog(req.user.id, 'restore', 'Product', id, { title: restored.title });
+    return restored;
+  }
+
   @Delete('products/:id')
-  async archiveProduct(@Param('id') id: string) {
-    return this.prisma.product.update({ where: { id }, data: { status: 'DRAFT' } });
+  async deleteProduct(@Req() req: Request & { user: { id: string } }, @Param('id') id: string) {
+    const sold = await this.prisma.orderItem.count({ where: { productId: id } });
+    if (sold > 0) throw new BadRequestException('This book has recorded sales and cannot be deleted — archive it instead.');
+    const deleted = await this.owner.deleteBook(id);
+    await this.owner.createAuditLog(req.user.id, 'delete', 'Product', id, { title: deleted.title });
+    return { deleted: true, id };
   }
 
   @Get('reviews')
