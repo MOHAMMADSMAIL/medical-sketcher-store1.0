@@ -261,7 +261,7 @@ describe('Phase 1-5 integration: rate limit -> CSRF -> app -> monitoring -> emai
 
   it('layer 4: forced app error is captured with redacted payload and no credentials leaked', async () => {
     const before = errorPayloads().length;
-    const res = await post('/payments/webhook', { paymentId: '00000000-0000-0000-0000-000000000000' });
+    const res = await post('/payments/webhook', { paymentId: '00000000-0000-0000-0000-000000000000' }, { 'x-webhook-secret': process.env.PAYMENT_WEBHOOK_SECRET || 'dev-webhook-secret' });
     expect(res.status).toBe(404);
     const response = await res.json() as { message?: string };
     expect(response.message).toBe('Payment not found');

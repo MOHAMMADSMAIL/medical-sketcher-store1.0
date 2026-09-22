@@ -77,6 +77,8 @@ model PhoneVerificationToken {
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   /// sha256 of the 6-digit code — raw code is never stored
   codeHash  String    @unique
+  /// Brute-force guard: failed verify attempts against this code (OWASP A07)
+  failedAttempts Int @default(0)
   /// LOGIN (phone-first sign-in) | VERIFY (attach phone to an existing account)
   purpose   String    @default("LOGIN")
   expiresAt DateTime

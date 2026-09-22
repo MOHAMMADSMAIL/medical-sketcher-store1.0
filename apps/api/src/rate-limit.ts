@@ -3,7 +3,12 @@ import type { NextFunction, Request, Response } from 'express';
 function policy(path: string): readonly [number, number] {
   if (/\/auth\/login/.test(path)) return [5, 60];
   if (/\/auth\/register/.test(path)) return [3, 60];
+  // Payment webhooks arrive as bursts from the provider gateway — a generous
+  // burst allowance, not the interactive /payments limit (OWASP A04/A07).
+  if (/\/payments\/webhook$/.test(path)) return [120, 60];
   if (/\/payments/.test(path)) return [10, 60];
+  // OTP verification is the brute-force target for 6-digit codes.
+  if (/\/auth\/phone\/verify/.test(path)) return [10, 60];
   if (/\/owner/.test(path)) return [60, 60];
   return [180, 60];
 }

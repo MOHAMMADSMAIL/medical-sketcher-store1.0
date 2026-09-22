@@ -72,12 +72,20 @@ export class PhoneAuthController {
     const phone = normalizePhone(body.phone);
     const user = await this.prisma.user.findUnique({ where: { phoneNumber: phone } });
     if (!user) throw new UnauthorizedException('No account linked to this phone');
+    // Brute-force guard (OWASP A07): a 6-digit code is ~10^6 keys, so failed
+    // attempts are counted per code server-side; after 5 wrong entries the
+    // code is dead and a new one must be requested (requests capped hourly).
     const token = await this.prisma.phoneVerificationToken.findFirst({ where: { userId: user.id, purpose: 'LOGIN', usedAt: null, expiresAt: { gt: new Date() } }, orderBy: { createdAt: 'desc' } });
-    const expected = token ? token.codeHash : '';
+    if (!token) throw new UnauthorizedException('Invalid or expired code');
+    if (token.failedAttempts >= 5) throw new UnauthorizedException('Too many invalid attempts — request a new code');
+    const expected = token.codeHash;
     const provided = createHash('sha256').update(body.code).digest('hex');
     const ok = expected.length === provided.length && expected === provided;
-    if (token) await this.prisma.phoneVerificationToken.update({ where: { id: token.id }, data: { usedAt: new Date() } });
-    if (!ok) throw new UnauthorizedException('Invalid or expired code');
+    if (!ok) {
+      await this.prisma.phoneVerificationToken.update({ where: { id: token.id }, data: { failedAttempts: { increment: 1 } } });
+      throw new UnauthorizedException('Invalid or expired code');
+    }
+    await this.prisma.phoneVerificationToken.update({ where: { id: token.id }, data: { usedAt: new Date() } });
 
     await this.prisma.user.update({ where: { id: user.id }, data: { phoneVerifiedAt: new Date() } });
     const raw = (await import('node:crypto')).randomBytes(32).toString('hex');

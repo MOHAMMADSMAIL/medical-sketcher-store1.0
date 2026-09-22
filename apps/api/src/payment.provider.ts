@@ -35,5 +35,8 @@ export function createPaymentProvider(): PaymentProvider {
     if (!process.env.HYPERPAY_ENTITY_ID || !process.env.HYPERPAY_ACCESS_TOKEN) throw new Error('HYPERPAY_ENTITY_ID and HYPERPAY_ACCESS_TOKEN are required');
     return new HyperPayProvider();
   }
+  // Fail-safe: the development provider auto-approves every payment. It must
+  // never be reachable in a production deployment due to misconfiguration.
+  if (process.env.NODE_ENV === 'production') throw new Error('Refusing to run the development payment provider in production: set PAYMENT_PROVIDER=hyperpay');
   return { async createCheckout(input) { return { provider: 'development', checkoutId: `dev_${input.orderId}`, status: 'CREATED' }; }, async verifyCheckout(checkoutId) { return { provider: 'development', checkoutId, transactionId: `dev_tx_${checkoutId}`, resultCode: '000.000.000', status: 'SUCCEEDED' }; } };
 }
