@@ -325,7 +325,7 @@ class OwnerAPIClient {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
     if (filters?.action) params.append('action', filters.action);
     if (filters?.userId) params.append('userId', filters.userId);
-    return this.fetchWithAuth(`/owner/audit-logs?${params.toString()}`);
+    return this.fetchWithAuth(`/owner/audit?${params.toString()}`);
   }
 
   // Settings

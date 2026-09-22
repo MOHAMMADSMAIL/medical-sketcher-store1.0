@@ -30,7 +30,8 @@ export default function ReviewsPage() {
     try {
       setLoading(true);
       const data = await ownerAPI.getReviews(approved, 1, 10);
-      setReviews(data.items);
+      // /owner/reviews returns a bare array; tolerate {items:[...]} shapes too.
+      setReviews(Array.isArray(data) ? data : (data?.items ?? []));
     } catch (err) {
       console.error('Failed to load reviews:', err);
     } finally {

@@ -79,7 +79,8 @@ export default function UsersPage() {
         ) : (
           <div className={styles.table}>
             <table>
-              <thead>                  <tr>
+              <thead>
+                <tr>
                     <th>Email</th>
                     <th>Name</th>
                     <th>Phone</th>

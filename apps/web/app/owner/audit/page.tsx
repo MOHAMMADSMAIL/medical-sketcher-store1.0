@@ -29,10 +29,10 @@ export default function AuditLogsPage() {
   const fetchLogs = async () => {
     try {
       setLoading(true);
-      const data = await ownerAPI.getAuditLogs(1, 50, {
-        action: actionFilter || undefined,
-      });
-      setLogs(data.items);
+      // /owner/audit returns a bare array (no pagination/filters server-side).
+      const data = await ownerAPI.getAuditLogs(1, 50);
+      const all = Array.isArray(data) ? data : (data?.items ?? []);
+      setLogs(actionFilter ? all.filter((l: any) => l.action === actionFilter) : all);
     } catch (err) {
       console.error('Failed to load logs:', err);
     } finally {
