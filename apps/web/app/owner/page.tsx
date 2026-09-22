@@ -7,6 +7,7 @@ type Product = { id: string; title: string; slug: string; description: string; p
 type Page = { id: string; slug: string; title: string; status: string; sections: { id: string; type: string; content: Record<string, unknown> }[]; versions: { id: string; version: number; content: unknown }[] };
 
 import { api as apiFetch } from '@/lib/api';
+import { useOwnerLang } from '@/lib/i18n-owner';
 
 const nav: { id: Tab; label: string; icon: string }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: '⌂' }, { id: 'editor', label: 'Site Editor', icon: '✦' },
@@ -17,6 +18,15 @@ const nav: { id: Tab; label: string; icon: string }[] = [
 
 async function request(path: string, init?: RequestInit) {
   return apiFetch<any>(`/owner${path}`, init);
+}
+
+function OwnerExamsLink() {
+  const { t } = useOwnerLang();
+  return <>
+    <a href="/owner/exams">{t.nav['/owner/exams']}</a>
+    <a href="/">↗ {t.visitSite}</a>
+    <button onClick={() => { window.location.href = '/login'; }}>↪ {t.logout}</button>
+  </>;
 }
 
 function Metric({ label, value, tone = 'olive' }: { label: string; value: string | number; tone?: string }) {
@@ -85,7 +95,7 @@ export default function OwnerStudio() {
       <div className="owner-brand"><span className="brand-orb">MS</span><div><b>MEDICAL<br />SKETCHER</b><small>OWNER STUDIO</small></div></div>
       <div className="workspace-pill"><span className="status-dot" /> Private workspace</div>
       <nav>{nav.map((item) => <button key={item.id} className={tab === item.id ? 'active' : ''} onClick={() => { setTab(item.id); setMessage(''); }}><i>{item.icon}</i>{item.label}</button>)}</nav>
-      <div className="sidebar-bottom"><a href="/owner/exams">资格考试 Exams</a><a href="/">↗ Open public site</a><button onClick={() => { window.location.href = '/login'; }}>↪ Sign out</button></div>
+      <div className="sidebar-bottom"><OwnerExamsLink /></div>
     </aside>
     <section className="owner-main">
       <header className="owner-header"><div><span className="eyebrow">MEDICAL SKETCHER / PRIVATE ACCESS</span><h1>{nav.find((item) => item.id === tab)?.label}</h1></div><div className="header-actions"><button className="ghost" onClick={() => window.open('/', '_blank')}>Preview site ↗</button><div className="owner-avatar">O</div><div><b>Owner</b><small>Administrator</small></div></div></header>
