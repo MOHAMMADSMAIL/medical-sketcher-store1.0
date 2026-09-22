@@ -11,10 +11,12 @@ export class ProductsController {
   @Get('slug/:slug') async bySlug(@Param('slug') slug: string) { const item = await this.products.findBySlug(slug); if (!item) throw new NotFoundException('Product not found'); return item; }
   @Get('media/:mediaId') async media(@Param('mediaId') mediaId: string, @Res() res: Response) {
     // Public media route: safe for product images (covers, merch photos).
-    // Only image types are served here; protected deliverables (books/PDFs)
+    // Only image types are served here, plus audio that is attached to a
+    // PUBLISHED exam (Listening) — protected deliverables (books/PDFs)
     // keep flowing through the watermarked DRM download route exclusively.
     const media = await this.products.findMedia(mediaId);
-    if (!media || !media.mimeType.startsWith('image/')) throw new NotFoundException('Media not found');
+    const isExamAudio = !!media?.mimeType.startsWith('audio/') && !!(await this.products.isAudioOfPublishedExam(mediaId));
+    if (!media || (!media.mimeType.startsWith('image/') && !isExamAudio)) throw new NotFoundException('Media not found');
     res.setHeader('Content-Type', media.mimeType);
     res.setHeader('Cache-Control', 'public, max-age=3600');
     // Allow the storefront origin to embed this image cross-origin
