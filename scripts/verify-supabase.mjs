@@ -32,10 +32,13 @@ const ok = (name) => console.log(`✅ ${name}`);
 const fail = (name, detail = '') => { failures++; console.log(`❌ ${name}${detail ? ` — ${detail}` : ''}`); };
 
 // ── 1. database reachability ────────────────────────────────────────────────
-const dbUrl = val('DATABASE_URL');
-if (!dbUrl) fail('DATABASE_URL', 'missing from .env');
+// Priority: DATABASE_URL_SUPABASE (owner-provided production URL, any mode)
+// > DATABASE_URL_POOLED > DATABASE_URL. The local dev DB URL stays untouched
+// so e2e keeps running against Docker.
+const dbUrl = val('DATABASE_URL_SUPABASE') || val('DATABASE_URL_POOLED') || val('DATABASE_URL');
+if (!dbUrl) fail('DATABASE_URL*', 'no Supabase or local URL found in .env');
 else {
-  console.log(`DB: ${maskUrl(dbUrl)}`);
+  console.log(`DB target: ${/supabase/i.test(dbUrl) ? 'SUPABASE (production)' : 'local dev'} — ${maskUrl(dbUrl)}`);
   const { PrismaClient } = await import('@prisma/client');
   const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } });
   try { await prisma.$queryRaw`SELECT 1`; ok('database reachable (SELECT 1)'); }

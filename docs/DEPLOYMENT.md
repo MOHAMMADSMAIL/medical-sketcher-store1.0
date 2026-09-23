@@ -10,10 +10,11 @@
 
 ## 1. Database migrations (run once per release)
 
-> **Supabase has two connection strings — use the right one for each job** (Settings → Database → Connection string):
-> - **Migrations** (one-off, from your machine): the **direct** URI, port **5432** — migrations need DDL, which the pooler does not support.
-> - **App runtime** (Fly secret `DATABASE_URL`): the **pooled** URI, port **6543** (`...pooler.supabase.com:6543...pgbouncer=true&connection_limit=5`) — serverless-style scaling would exhaust direct connections. Note Prisma 6 here supports `directUrl`, but the app itself should simply point at 6543.
-> - Project ref = the long token in the host (`db.<ref>.supabase.co` or `aws-0-<region>.pooler.supabase.com`).
+> **Supabase connection modes — verified against the official docs (2026-09):**
+> - **Migrations** (one-off, from your machine): copy the string from **Connect → Session pooler** (port **5432**, host `aws-[INDEX]-[REGION].pooler.supabase.com`). The shared pooler is **IPv4-only on every plan** — your home network can reach it. The **direct** host `db.<ref>.supabase.co:5432` is **IPv6-only on Free plans**, so it usually fails from residential networks without the IPv4 add-on.
+> - **App runtime** (Fly secret `DATABASE_URL`): **Connect → Transaction pooler** (port **6543**, same pooler host, `pgbouncer=true&connection_limit=5`). Transaction mode does **not** support prepared statements — harmless for Prisma here, but set `connection_limit=5`.
+> - ⚠️ **The pooler host cannot be composed from your region** — it carries a cluster index (`aws-0`, `aws-1`, …). Copy it verbatim from the Connect dialog; both pooled modes use username `postgres.<PROJECT-REF>` while direct uses `postgres`.
+> - Project ref = the token in the host (`db.<ref>.supabase.co` or `aws-<idx>-<region>.pooler.supabase.com`).
 
 ```bash
 # from repo root — applies prisma/migrations in order (0001 → latest)
