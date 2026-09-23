@@ -10,6 +10,11 @@
 
 ## 1. Database migrations (run once per release)
 
+> **Supabase has two connection strings — use the right one for each job** (Settings → Database → Connection string):
+> - **Migrations** (one-off, from your machine): the **direct** URI, port **5432** — migrations need DDL, which the pooler does not support.
+> - **App runtime** (Fly secret `DATABASE_URL`): the **pooled** URI, port **6543** (`...pooler.supabase.com:6543...pgbouncer=true&connection_limit=5`) — serverless-style scaling would exhaust direct connections. Note Prisma 6 here supports `directUrl`, but the app itself should simply point at 6543.
+> - Project ref = the long token in the host (`db.<ref>.supabase.co` or `aws-0-<region>.pooler.supabase.com`).
+
 ```bash
 # from repo root — applies prisma/migrations in order (0001 → latest)
 DATABASE_URL="<production-supabase-url>" npx prisma migrate deploy --schema prisma/schema.prisma
