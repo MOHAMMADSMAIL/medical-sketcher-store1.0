@@ -1,0 +1,33 @@
+# Fly.io configuration for the Aurelia Books API.
+# Deploy from repo root with:  fly deploy --dockerfile apps/api/Dockerfile -a <app-name>
+# Secrets are set via `fly secrets set ...` (see docs/DEPLOYMENT.md) — never in this file.
+
+app = "aurelia-api"            # ← change to your chosen Fly app name
+primary_region = "fra"
+
+[env]
+  NODE_ENV = "production"
+  # Fly routes its internal traffic to 8080; the API reads API_PORT at boot.
+  API_PORT = "8080"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 200
+    hard_limit = 250
+
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "10s"
+    method = "GET"
+    path = "/api/health"
+
+[deploy]
+  strategy = "rolling"

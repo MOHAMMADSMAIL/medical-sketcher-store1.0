@@ -34,7 +34,13 @@ async function bootstrap() {
   });
   // CORS first so rejected requests (403 CSRF / 429 rate limit) still carry
   // Access-Control-Allow-Origin and the browser can surface the real message.
-  app.enableCors({ origin: process.env.WEB_URL || 'http://localhost:3001', credentials: true });
+  // WEB_URL accepts a comma-separated list of allowed origins (e.g. the Vercel
+  // production URL plus a preview URL). Must match the CSRF allowed-origins.
+  const allowedOrigins = (process.env.WEB_URL || 'http://localhost:3001')
+    .split(',')
+    .map((value) => value.trim().replace(/\/$/, ''))
+    .filter(Boolean);
+  app.enableCors({ origin: allowedOrigins, credentials: true });
   app.use(helmet());
   app.use(cookieParser());
   app.use(rateLimit);
