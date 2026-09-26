@@ -18,7 +18,7 @@
 
 > **Supabase connection modes — verified against the official docs (2026-09):**
 > - **Migrations** (one-off, from your machine): copy the string from **Connect → Session pooler** (port **5432**, host `aws-[INDEX]-[REGION].pooler.supabase.com`). The shared pooler is **IPv4-only on every plan** — your home network can reach it. The **direct** host `db.<ref>.supabase.co:5432` is **IPv6-only on Free plans**, so it usually fails from residential networks without the IPv4 add-on.
-> - **App runtime** (Fly secret `DATABASE_URL`): **Connect → Transaction pooler** (port **6543**, same pooler host, `pgbouncer=true&connection_limit=5`). Transaction mode does **not** support prepared statements — harmless for Prisma here, but set `connection_limit=5`.
+> - **App runtime** (Fly secret `DATABASE_URL`): **Connect → Session pooler** (port **5432**, same pooler host). Verified against the official docs table: a *persistent backend* (Fly VMs are cited there by name) uses a **direct connection or shared-pooler session mode** — session mode is the IPv4-safe choice on every plan and keeps prepared statements + session state fully supported. **Transaction mode (6543) is documented for serverless/edge, short-lived connections — not for a long-running NestJS VM.**
 > - ⚠️ **The pooler host cannot be composed from your region** — it carries a cluster index (`aws-0`, `aws-1`, …). Copy it verbatim from the Connect dialog; both pooled modes use username `postgres.<PROJECT-REF>` while direct uses `postgres`.
 > - Project ref = the token in the host (`db.<ref>.supabase.co` or `aws-<idx>-<region>.pooler.supabase.com`).
 
@@ -42,7 +42,7 @@ fly postgres attach <your-fly-postgres>                   # OR skip if using Sup
 
 # environment (the exact required set is in FLY-SECRETS.md)
 fly secrets set NODE_ENV=production API_PORT=8080 \
-  DATABASE_URL="<supabase-transaction-pooler-url>" \
+  DATABASE_URL="<supabase-session-pooler-url-5432>" \
   WEB_URL="https://<your-vercel-app>.vercel.app" \
   STORAGE_PROVIDER=supabase SUPABASE_URL="<...>" SUPABASE_SERVICE_ROLE_KEY="<...>" SUPABASE_STORAGE_BUCKET=books-private \
   PAYMENT_PROVIDER=hyperpay HYPERPAY_BASE_URL=https://test.oppwa.com \
@@ -67,7 +67,7 @@ fly deploy
 
 Build/start used by Fly (already in `apps/api/package.json`): `npm run build` → `npm start` (`node dist/main.js`). Fly sets `PORT`; the API reads `API_PORT` — set `API_PORT=8080` in secrets (also in `fly.toml` `[env]`).
 
-> ⚠️ **DATABASE_URL runtime pooler choice (verified against official docs):** `fly.toml`'s health check only pings the DB once at boot, but the runtime serves many concurrent requests — use the **Transaction pooler (6543)** URL with `pgbouncer=true&connection_limit=5` as the Fly `DATABASE_URL` secret (see §1 for the why). The **Session pooler (5432)** URL is for one-off migrations from your machine (§1) and works there too.
+> ⚠️ **DATABASE_URL runtime pooler choice (verified against the official docs):** the Fly machine is a *persistent* backend, so the `DATABASE_URL` secret uses the **Session pooler (5432)** URL — exactly the same string you use for migrations (§1): same host, same port, prepared statements and session state supported. Do **not** use the Transaction pooler (6543) here; the docs scope it to serverless/edge functions with many short-lived connections, and it drops prepared statements. The health check (`/api/health`) exercises the DB on every Fly check (every 30s), so a wrong pooler shows up in `fly logs` quickly.
 
 ## 3. Frontend → Vercel
 
