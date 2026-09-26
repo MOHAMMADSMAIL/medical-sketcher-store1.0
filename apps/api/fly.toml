@@ -5,6 +5,11 @@
 app = "aurelia-api"            # ← change to your chosen Fly app name
 primary_region = "fra"
 
+[build]
+  # Dockerfile sits next to this fly.toml; the build CONTEXT stays the repo
+  # root (the Dockerfile COPYs monorepo paths like apps/api/package.json).
+  dockerfile = "Dockerfile"
+
 [env]
   NODE_ENV = "production"
   # Fly routes its internal traffic to 8080; the API reads API_PORT at boot.
