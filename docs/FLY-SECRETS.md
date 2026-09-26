@@ -43,6 +43,19 @@
 | `PUBLIC_API_URL` | `https://medical-sketcher-store1-0.fly.dev` — لبناء redirect URI الصحيح لـ Google OAuth |
 | `HYPERPAY_PAYMENT_TYPE` | `DB` (افتراضي مقبول — أضفها صراحة للوضوح) |
 
+## فخاخ الأسماء — أسماء شائعة في قوائم خارجية لا يقرؤها الكود (تحقق grep)
+
+إذا أُضيفت بأسماء خاطئة فلا يفشل الإقلاع — بل تسقط وظائف بصمت:
+
+| اسم خاطئ شائع | الاسم الصحيح الذي يقرؤه الكود | نتيجة الاسم الخاطئ |
+|---|---|---|
+| `UPSTASH_REDIS_URL` / `UPSTASH_REDIS_TOKEN` | `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` (`rate-limit.ts:17-18`) | **503 على كل طلب — الموقع كله معطّل** |
+| `HYPERPAY_WEBHOOK_SECRET` | `PAYMENT_WEBHOOK_SECRET` (`payment.controller.ts:13`) | فحص سر الـ webhook يُتخطى بصمت |
+| `SUPABASE_ANON_KEY` | لا يُقرأ إطلاقاً | زائد فارغ |
+| `SUPABASE_JWT_SECRET` | لا يُقرأ إطلاقاً | زائد فارغ |
+
+واحتياطاً: `SUPABASE_STORAGE_BUCKET` افتراضه `books-private` بالكود، لكن أضفها صراحة.
+
 ## Checklist الإضافة (Fly Dashboard → App → Secrets)
 
 ```
