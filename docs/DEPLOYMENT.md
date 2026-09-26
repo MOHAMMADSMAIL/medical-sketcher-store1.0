@@ -1,6 +1,12 @@
 # Aurelia Books — Deployment Guide (Vercel + Fly.io)
 
 > Owner-facing checklist. Do this **after** creating Supabase/HyperPay/Resend/Upstash/Sentry accounts (see `.env.example` for where each value comes from).
+>
+> 📌 **The exact secret names are in [`FLY-SECRETS.md`](FLY-SECRETS.md)** — grep-verified against the code. Copy them **exactly**; two common wrong names fail silently in production:
+> - `UPSTASH_REDIS_URL` ✗ → **`UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`** (wrong name ⇒ rate limiter unconfigured ⇒ **503 on every request** with a green boot)
+> - `HYPERPAY_WEBHOOK_SECRET` ✗ → **`PAYMENT_WEBHOOK_SECRET`** (wrong name ⇒ webhook signature check silently skipped)
+>
+> `AUTH_SECRET`, `JWT_SECRET`, `SUPABASE_ANON_KEY`, `SUPABASE_JWT_SECRET` are **not read by the code** — adding them is harmless but misleading. `NODE_ENV`/`API_PORT` come from `apps/api/fly.toml` `[env]`, not secrets.
 
 ## 0. Prerequisites
 
@@ -34,10 +40,9 @@ fly auth login
 fly launch --no-deploy --name aurelia-api --region fra   # pick your nearest region
 fly postgres attach <your-fly-postgres>                   # OR skip if using Supabase directly
 
-# environment (repeat for every var in .env.example)
+# environment (the exact required set is in FLY-SECRETS.md)
 fly secrets set NODE_ENV=production API_PORT=8080 \
-  DATABASE_URL="<supabase-url>" \
-  AUTH_SECRET="$(openssl rand -hex 32)" AUTH_COOKIE_NAME=aurelia_session AUTH_SESSION_DAYS=30 \
+  DATABASE_URL="<supabase-transaction-pooler-url>" \
   WEB_URL="https://<your-vercel-app>.vercel.app" \
   STORAGE_PROVIDER=supabase SUPABASE_URL="<...>" SUPABASE_SERVICE_ROLE_KEY="<...>" SUPABASE_STORAGE_BUCKET=books-private \
   PAYMENT_PROVIDER=hyperpay HYPERPAY_BASE_URL=https://test.oppwa.com \
@@ -60,7 +65,9 @@ fly deploy
 
 **Health check:** the API exposes `GET /api/health` → `200 {"status":"ok","database":"up"}` or `503` if the DB is unreachable. `apps/api/fly.toml` already wires this check (path `/api/health`, port 8080).
 
-Build/start used by Fly (already in `apps/api/package.json`): `npm run build` → `npm start` (`node dist/main.js`). Fly sets `PORT`; the API reads `API_PORT` — set `API_PORT=8080` in secrets.
+Build/start used by Fly (already in `apps/api/package.json`): `npm run build` → `npm start` (`node dist/main.js`). Fly sets `PORT`; the API reads `API_PORT` — set `API_PORT=8080` in secrets (also in `fly.toml` `[env]`).
+
+> ⚠️ **DATABASE_URL runtime pooler choice (verified against official docs):** `fly.toml`'s health check only pings the DB once at boot, but the runtime serves many concurrent requests — use the **Transaction pooler (6543)** URL with `pgbouncer=true&connection_limit=5` as the Fly `DATABASE_URL` secret (see §1 for the why). The **Session pooler (5432)** URL is for one-off migrations from your machine (§1) and works there too.
 
 ## 3. Frontend → Vercel
 
